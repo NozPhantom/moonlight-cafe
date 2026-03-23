@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MLC POS - Moonlight Galaxy Edition</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Inter:wght@300;400;600&display=swap');
+
+        :root {
+            --bg-space: #020205;
+            --glass: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --accent: linear-gradient(135deg, #a0c4ff 0%, #c49fff 100%);
+            --danger: linear-gradient(135deg, #ff6b6b 0%, #ee5253 100%);
+            --font-fancy: 'Dancing Script', cursive;
+            --font-main: 'Inter', sans-serif;
+        }
+
+        * { box-sizing: border-box; -webkit-font-smoothing: antialiased; margin: 0; padding: 0; }
+        body { font-family: var(--font-main); background: var(--bg-space); color: #f0f0f8; overflow: hidden; height: 100vh; }
+
+        #canvas-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: radial-gradient(circle at center, #0a0a1a 0%, #020205 100%); }
+        .glass { background: var(--glass); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border-radius: 20px; border: 1px solid var(--glass-border); box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
+        input, select { background: rgba(0,0,0,0.4); border: 1px solid var(--glass-border); color: white; padding: 12px; border-radius: 12px; outline: none; width: 100%; font-family: inherit; }
+        button { cursor: pointer; border: none; border-radius: 12px; font-weight: 600; transition: 0.3s; text-transform: uppercase; font-size: 11px; }
+        .btn-primary { background: var(--accent); color: #050510; padding: 12px 20px; }
+        .btn-secondary { background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--glass-border); padding: 12px 20px; }
+        .btn-danger { background: var(--danger); color: white; padding: 12px 20px; }
+        
+        .screen { display: none; width: 100vw; height: 100vh; position: absolute; flex-direction: column; z-index: 10; animation: fadeIn 0.8s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        header { display: flex; justify-content: space-between; align-items: center; padding: 15px 30px; height: 80px; }
+        .fancy-title { font-family: var(--font-fancy); font-size: 35px; background: var(--accent); -webkit-background-clip: text; color: transparent; }
+        
+        .container { display: grid; grid-template-columns: 1fr 380px; gap: 20px; padding: 0 30px 30px; height: calc(100vh - 80px); }
+        #product-list-container { overflow-y: auto; scrollbar-width: none; }
+        .category-title { font-family: var(--font-fancy); font-size: 30px; color: #a0c4ff; margin: 25px 0 15px; }
+        .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; }
+        .product-card { padding: 20px; text-align: center; position: relative; }
+        .qty-controls { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 15px; background: rgba(0,0,0,0.3); padding: 5px; border-radius: 15px; }
+        .qty-btn { width: 35px; height: 35px; border-radius: 10px; background: rgba(255,255,255,0.1); color: white; font-size: 18px; }
+        .qty-input { width: 55px; text-align: center; border: none; background: transparent; font-weight: bold; color: white; }
+        
+        .mgmt-content { padding: 30px; overflow-y: auto; display: flex; flex-direction: column; gap: 30px; }
+        .mgmt-card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
+        .emp-card { padding: 20px; text-align: center; border-radius: 15px; }
+        
+        #notify-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+        .notify { padding: 15px 25px; border-radius: 12px; background: rgba(10, 10, 25, 0.95); border: 1px solid var(--glass-border); box-shadow: 0 10px 30px rgba(0,0,0,0.8); color: white; min-width: 250px; }
+    </style>
+</head>
+<body>
+
+<div id="canvas-container"><canvas id="bg-canvas"></canvas></div>
+<div id="notify-container"></div>
+
+<div id="login-screen" class="screen" style="display:flex; justify-content:center; align-items:center;">
+    <div class="login-box glass" style="padding:50px; width:400px; text-align:center;">
+        <div class="fancy-title">Moonlight Café</div>
+        <div style="font-size:10px; letter-spacing:3px; color:#a0c4ff; margin-bottom:40px;">GALAXY POS SYSTEM</div>
+        <input type="text" id="username" placeholder="Benutzername">
+        <input type="password" id="password" placeholder="Passwort" style="margin-top:15px;">
+        <button class="btn-primary" onclick="handleLogin()" style="width:100%; margin-top:30px;">Login</button>
+    </div>
+</div>
+
+<div id="main-system" class="screen">
+    <header class="glass" style="margin:15px 30px; border-radius:20px;">
+        <div id="clock">00:00:00</div>
+        <div class="fancy-title" style="font-size:24px;">Moonlight</div>
+        <div style="display:flex; gap:15px;">
+            <button id="mgmt-btn" class="btn-secondary" style="display:none;" onclick="showScreen('mgmt-system')">Management</button>
+            <button id="duty-btn" class="btn-primary" onclick="toggleDuty()">Einstempeln</button>
+            <button class="btn-danger" onclick="location.reload()">Logout</button>
+        </div>
+    </header>
+    <div class="container">
+        <div id="product-list-container"></div>
+        <div class="cart-area glass" style="padding:25px; display:flex; flex-direction:column;">
+            <h3 style="font-family:var(--font-fancy); font-size:24px;">Bestellung</h3>
+            <div id="cart-list" style="flex:1; margin:20px 0; overflow-y:auto;"></div>
+            <div style="border-top:1px solid var(--glass-border); padding-top:15px;">
+                <div style="display:flex; justify-content:space-between; font-size:24px; color:#42e695;">
+                    <span>Total:</span><span><span id="total-price">0.00</span>€</span>
+                </div>
+                <button class="btn-primary" onclick="submitReceipt()" style="width:100%; margin-top:20px; height:50px;">Quittung senden</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="mgmt-system" class="screen">
+    <header class="glass" style="margin:15px 30px; border-radius:20px;">
+        <div class="fancy-title" style="font-size:24px;">Zentrale</div>
+        <button class="btn-secondary" onclick="showScreen('main-system')">Schließen</button>
+    </header>
+    <div class="mgmt-content">
+        <div class="glass" style="padding:25px;">
+            <h4 style="margin-bottom:20px;">Neuer Mitarbeiter / Login erstellen</h4>
+            <div style="display:grid; grid-template-columns: 1fr 1fr 1fr auto; gap:15px;">
+                <input type="text" id="new-u" placeholder="Login-Name">
+                <input type="password" id="new-p" placeholder="Passwort">
+                <select id="new-r">
+                    <option>Techniker</option>
+                    <option>Geschäftsführung</option>
+                    <option>Management</option>
+                    <option>Caffeespezialist</option>
+                    <option>barista</option>
+                    <option>Azubi</option>
+                </select>
+                <button class="btn-primary" onclick="createEmployee()">Hinzufügen</button>
+            </div>
+        </div>
+        <h3 class="category-title">Mitarbeiter & Logins</h3>
+        <div id="emp-grid" class="mgmt-card-grid"></div>
+        <h3 class="category-title">Lagerverwaltung</h3>
+        <div class="glass" style="padding:20px;">
+            <table style="width:100%; text-align:left; border-collapse:collapse;" id="stock-table">
+                <thead><tr style="color:#a0c4ff;"><th>Produkt</th><th>Bestand</th><th>Aktion</th></tr></thead>
+                <tbody id="stock-tbody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
+<script>
+    // --- FIREBASE KONFIGURATION ---
+    const firebaseConfig = {
+        apiKey: "1:25359833042:web:349a45f94b9439f61e9a0b",
+        authDomain: "moonlight-cafe-html.firebaseapp.com",
+        databaseURL: "https://moonlight-cafe-html-default-rtdb.firebaseio.com/",
+        projectId: "moonlight-cafe-html",
+        storageBucket: "moonlight-cafe-html.appspot.com",
+        messagingSenderId: "25359833042",
+        appId: "1:25359833042:web:349a45f94b9439f61e9a0b"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const rtdb = firebase.database();
+
+    const WEBHOOK_REC = "https://discord.com/api/webhooks/1485574543673397349/U_AvRzZ-F8ZNhuKshD7dZWq7kvXhsng6xfmuvZNJY1fl8voCPfib8oitsUMfAw4eGs35";
+    const WEBHOOK_STOCK = "https://discord.com/api/webhooks/1485575026664018000/G6cCLidNsNVC-ZhVQV18XRDikweQmt6nf1JP9IipJayIg8h21EOtB8rmtd7QusAKIjvQ";
+
+    let products = [];
+    let employees = [];
+    let currentUser = null, cart = {}, onDuty = false;
+
+    // --- AUTOMATISCHES SETUP BEI LEERER DATENBANK ---
+    function checkInitialSetup() {
+        rtdb.ref('/').once('value', (snapshot) => {
+            if (!snapshot.hasChild('products')) {
+                console.log("Datenbank leer. Starte Auto-Setup...");
+                const initialProducts = {
+                    'esp': { name: 'espresso', price: 100, category: 'Heissgetränke', stock: 50 },
+                    'caf': { name: 'Caffee', price: 95, category: 'Heissgetränke', stock: 50 },
+                    'ms':  { name: 'Milch Shake', price: 100, category: 'Heissgetränke', stock: 50 },
+                    'kak': { name: 'Kakao', price: 100, category: 'Heissgetränke', stock: 50 },
+                    'ml':  { name: 'Moonlight Latte', price: 150, category: 'Spezialitäten des Hauses', stock: 50 },
+                    'mc':  { name: 'Midnight Cake', price: 150, category: 'Spezialitäten des Hauses', stock: 50 },
+                    'ek':  { name: 'Erdbeerkuchen', price: 100, category: 'Kuchen & Süsses', stock: 50 },
+                    'sb':  { name: 'Schoko Brownie', price: 90, category: 'Kuchen & Süsses', stock: 50 },
+                    'don': { name: 'Donut', price: 80, category: 'Kuchen & Süsses', stock: 50 },
+                    'coo': { name: 'Cookies', price: 65, category: 'Kuchen & Süsses', stock: 50 },
+                    'bb':  { name: 'Belegtes Brötchen', price: 100, category: 'Kleine Snacks', stock: 50 },
+                    'at':  { name: 'avocado Toast', price: 100, category: 'Kleine Snacks', stock: 50 },
+                    'cro': { name: 'Croissant', price: 90, category: 'Kleine Snacks', stock: 50 }
+                };
+                rtdb.ref('products').set(initialProducts);
+            }
+            if (!snapshot.hasChild('employees')) {
+                rtdb.ref('employees').push({ u: "OM_MA", p: "OM_MA", role: "Techniker", name: "OM_MA" });
+            }
+        });
+    }
+
+    function loadData() {
+        checkInitialSetup();
+        rtdb.ref('employees').on('value', (s) => {
+            const d = s.val();
+            employees = d ? Object.keys(d).map(k => ({ id: k, ...d[k] })) : [];
+            if(document.getElementById('mgmt-system').style.display === 'flex') refreshMgmt();
+        });
+        rtdb.ref('products').on('value', (s) => {
+            const d = s.val();
+            products = d ? Object.keys(d).map(k => ({ id: k, ...d[k] })) : [];
+            renderProducts();
+        });
+    }
+
+    function customNotify(msg, type="success") {
+        const n = document.createElement('div');
+        n.className = "notify glass";
+        n.style.borderLeft = type === "success" ? "4px solid #42e695" : "4px solid #ff6b6b";
+        n.innerText = msg;
+        document.getElementById('notify-container').appendChild(n);
+        setTimeout(() => { n.style.opacity = "0"; setTimeout(() => n.remove(), 600); }, 3500);
+    }
+
+    function showScreen(id) {
+        document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
+        document.getElementById(id).style.display = 'flex';
+        if(id === 'mgmt-system') refreshMgmt();
+    }
+
+    function handleLogin() {
+        const u = document.getElementById('username').value, p = document.getElementById('password').value;
+        const user = employees.find(e => e.u === u && e.p === p);
+        if(user) {
+            currentUser = user;
+            document.getElementById('mgmt-btn').style.display = ["Techniker", "Geschäftsführung", "Management"].includes(user.role) ? "block" : "none";
+            showScreen('main-system');
+            customNotify(`Eingeloggt als ${user.u}`);
+        } else customNotify("Login fehlgeschlagen!", "error");
+    }
+
+    function createEmployee() {
+        const u = document.getElementById('new-u').value, p = document.getElementById('new-p').value, r = document.getElementById('new-r').value;
+        if(!u || !p) return customNotify("Felder ausfüllen!", "error");
+        rtdb.ref('employees').push({ u, p, role: r, name: u });
+        customNotify(`Login für ${u} erstellt.`);
+    }
+
+    function refreshMgmt() {
+        const grid = document.getElementById('emp-grid'); grid.innerHTML = "";
+        employees.forEach((e) => {
+            grid.innerHTML += `<div class="emp-card glass">
+                <input type="text" value="${e.u}" onchange="rtdb.ref('employees/${e.id}').update({u:this.value, name:this.value})">
+                <input type="password" value="${e.p}" onchange="rtdb.ref('employees/${e.id}').update({p:this.value})" style="margin:10px 0;">
+                <div style="font-size:10px; color:#a0c4ff; margin-bottom:10px;">${e.role}</div>
+                ${e.u !== 'OM_MA' ? `<button class="btn-danger" onclick="rtdb.ref('employees/${e.id}').remove()">Löschen</button>` : ''}
+            </div>`;
+        });
+        const tbody = document.getElementById('stock-tbody'); tbody.innerHTML = "";
+        products.forEach(p => {
+            tbody.innerHTML += `<tr style="border-bottom:1px solid rgba(255,255,255,0.1);">
+                <td style="padding:15px;">${p.name}</td>
+                <td><input type="number" value="${p.stock}" onchange="rtdb.ref('products/${p.id}').update({stock:parseInt(this.value)})" style="width:80px;"></td>
+                <td style="text-align:right;"><button class="btn-primary" onclick="customNotify('Gespeichert')">Save</button></td>
+            </tr>`;
+        });
+    }
+
+    function renderProducts() {
+        const container = document.getElementById('product-list-container'); container.innerHTML = "";
+        const cats = [...new Set(products.map(p => p.category))];
+        cats.forEach(cat => {
+            container.innerHTML += `<div class="category-title">${cat}</div>`;
+            const g = document.createElement('div'); g.className = "products-grid";
+            products.filter(p => p.category === cat).forEach(p => {
+                g.innerHTML += `<div class="product-card glass">
+                    <strong>${p.name}</strong><br><small>${p.price.toFixed(2)}€</small>
+                    <div class="qty-controls">
+                        <button class="qty-btn" onclick="updateQty('${p.id}', -1)">-</button>
+                        <input type="number" id="qty-${p.id}" class="qty-input" value="0" onchange="manualQty('${p.id}', this.value)">
+                        <button class="qty-btn" onclick="updateQty('${p.id}', 1)">+</button>
+                    </div></div>`;
+            });
+            container.appendChild(g);
+        });
+    }
+
+    function updateQty(id, d) {
+        let p = products.find(x => x.id === id);
+        let current = cart[id] ? cart[id].qty : 0;
+        let next = current + d;
+        if(next >= 0 && next <= p.stock) {
+            document.getElementById(`qty-${id}`).value = next;
+            manualQty(id, next);
+        }
+    }
+
+    function manualQty(id, v) {
+        const p = products.find(x => x.id === id);
+        let val = parseInt(v) || 0;
+        if(val > 0) cart[id] = { name: p.name, qty: val, price: p.price };
+        else delete cart[id];
+        renderCart();
+    }
+
+    function renderCart() {
+        const list = document.getElementById('cart-list'); list.innerHTML = ""; let t = 0;
+        for(let id in cart) { 
+            t += cart[id].qty * cart[id].price;
+            list.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                <span>${cart[id].qty}x ${cart[id].name}</span><span>${(cart[id].qty*cart[id].price).toFixed(2)}€</span>
+            </div>`;
+        }
+        document.getElementById('total-price').innerText = t.toFixed(2);
+    }
+
+    async function submitReceipt() {
+        if(Object.keys(cart).length === 0) return customNotify("Warenkorb leer!", "error");
+        let d = `**Mitarbeiter:** ${currentUser.u}\n\n`;
+        for(let id in cart) {
+            const p = products.find(x => x.id === id);
+            d += `• ${cart[id].qty}x ${p.name}\n`;
+            let ns = p.stock - cart[id].qty;
+            rtdb.ref('products/' + id).update({stock: ns});
+            if(ns < 20) fetch(WEBHOOK_STOCK, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({content: `⚠️ **Lagerwarnung:** ${p.name} nur noch ${ns} Stück!`})});
+        }
+        await fetch(WEBHOOK_REC, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({embeds:[{title:"Neue Bestellung", description: d + `\n**Gesamt: ${document.getElementById('total-price').innerText}€**`, color: 0xc49fff}]})});
+        customNotify("Quittung wurde gesendet!");
+        cart = {}; renderCart();
+    }
+
+    function toggleDuty() {
+        onDuty = !onDuty;
+        const b = document.getElementById('duty-btn');
+        b.innerText = onDuty ? "Ausstempeln" : "Einstempeln";
+        b.className = onDuty ? "btn-danger" : "btn-primary";
+        customNotify(onDuty ? "Schicht gestartet" : "Schicht beendet");
+    }
+
+    setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleTimeString(); }, 1000);
+    window.onload = loadData;
+
+    // Background Animation
+    const canvas = document.getElementById('bg-canvas'), ctx = canvas.getContext('2d');
+    let w, h, pts = [];
+    const m = { x: null, y: null };
+    window.onmousemove = (e) => { m.x = e.x; m.y = e.y; };
+    window.onresize = () => { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; };
+    window.onresize();
+    class Part {
+        constructor() { this.x = Math.random()*w; this.y = Math.random()*h; this.s = Math.random()*2; this.vx = Math.random()*0.4-0.2; this.vy = Math.random()*0.4-0.2; }
+        draw() {
+            this.x += this.vx; this.y += this.vy;
+            if(this.x<0 || this.x>w) this.vx*=-1; if(this.y<0 || this.y>h) this.vy*=-1;
+            let dx = m.x-this.x, dy = m.y-this.y, dist = Math.sqrt(dx*dx+dy*dy);
+            if(dist<100) { this.x -= dx/30; this.y -= dy/30; }
+            ctx.fillStyle = "rgba(255,255,255,0.4)"; ctx.beginPath(); ctx.arc(this.x,this.y,this.s,0,Math.PI*2); ctx.fill();
+        }
+    }
+    for(let i=0; i<150; i++) pts.push(new Part());
+    function anim() { ctx.clearRect(0,0,w,h); pts.forEach(x => x.draw()); requestAnimationFrame(anim); }
+    anim();
+</script>
+</body>
+</html>
