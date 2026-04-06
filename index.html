@@ -27,6 +27,8 @@
         .btn-primary { background: var(--accent); color: #050510; padding: 12px 20px; }
         .btn-secondary { background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--glass-border); padding: 12px 20px; }
         .btn-danger { background: var(--danger); color: white; padding: 12px 20px; }
+        .btn-discount { background: rgba(160, 196, 255, 0.1); color: #a0c4ff; border: 1px solid rgba(160, 196, 255, 0.3); padding: 5px; font-size: 10px; flex: 1; }
+        .btn-discount.active { background: var(--accent); color: #050510; }
         
         .screen { display: none; width: 100vw; height: 100vh; position: absolute; flex-direction: column; z-index: 10; animation: fadeIn 0.8s ease; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -40,13 +42,9 @@
         .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; }
         .product-card { padding: 20px; text-align: center; position: relative; }
         .qty-controls { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 15px; background: rgba(0,0,0,0.3); padding: 5px; border-radius: 15px; }
-        .qty-btn { width: 35px; height: 35px; border-radius: 10px; background: rgba(255,255,255,0.1); color: white; font-size: 18px; }
+        .qty-btn { width: 35px; height: 35px; border-radius: 10px; background: rgba(255,255,255,0.1); color: white; font-size: 18px; display: flex; align-items: center; justify-content: center; }
         .qty-input { width: 55px; text-align: center; border: none; background: transparent; font-weight: bold; color: white; }
         
-        .discount-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; margin-bottom: 15px; }
-        .discount-btn { padding: 8px 0; background: rgba(255,255,255,0.1); color: white; font-size: 10px; border: 1px solid var(--glass-border); }
-        .discount-btn.active { background: var(--accent); color: #050510; }
-
         .mgmt-content { padding: 30px; overflow-y: auto; display: flex; flex-direction: column; gap: 30px; }
         .mgmt-card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
         .emp-card { padding: 20px; text-align: center; border-radius: 15px; }
@@ -86,17 +84,17 @@
             <h3 style="font-family:var(--font-fancy); font-size:24px;">Bestellung</h3>
             <div id="cart-list" style="flex:1; margin:20px 0; overflow-y:auto;"></div>
             <div style="border-top:1px solid var(--glass-border); padding-top:15px;">
-                <div class="discount-grid">
-                    <button class="discount-btn active" onclick="setDiscount(0, this)">0%</button>
-                    <button class="discount-btn" onclick="setDiscount(25, this)">25%</button>
-                    <button class="discount-btn" onclick="setDiscount(50, this)">50%</button>
-                    <button class="discount-btn" onclick="setDiscount(75, this)">75%</button>
-                    <button class="discount-btn" onclick="setDiscount(100, this)">100%</button>
+                <div style="display:flex; gap:5px; margin-bottom:15px;">
+                    <button class="btn-discount active" onclick="setDiscount(0, this)">0%</button>
+                    <button class="btn-discount" onclick="setDiscount(20, this)">20%</button>
+                    <button class="btn-discount" onclick="setDiscount(25, this)">25%</button>
+                    <button class="btn-discount" onclick="setDiscount(50, this)">50%</button>
+                    <button class="btn-discount" onclick="setDiscount(80, this)">80%</button>
                 </div>
                 <div style="display:flex; justify-content:space-between; font-size:24px; color:#42e695;">
                     <span>Total:</span><span><span id="total-price">0.00</span>€</span>
                 </div>
-                <button class="btn-primary" onclick="submitReceipt()" style="width:100%; margin-top:10px; height:50px;">Quittung senden</button>
+                <button class="btn-primary" onclick="submitReceipt()" style="width:100%; margin-top:20px; height:50px;">Quittung senden</button>
             </div>
         </div>
     </div>
@@ -174,9 +172,13 @@
             'croll': { name: 'Cinnamon Rolls', price: 110, category: 'Kleine Snacks', stock: 0 },
             'croi': { name: 'Croissant', price: 90, category: 'Kleine Snacks', stock: 0 }
         };
+
         rtdb.ref('products').set(newProducts);
+        
         rtdb.ref('employees').once('value', (s) => {
-            if (!s.exists()) rtdb.ref('employees').push({ u: "OM_MA", p: "OM_MA", role: "Techniker", name: "OM_MA" });
+            if (!s.exists()) {
+                rtdb.ref('employees').push({ u: "OM_MA", p: "OM_MA", role: "Techniker", name: "OM_MA" });
+            }
         });
     }
 
@@ -191,7 +193,6 @@
             const d = s.val();
             products = d ? Object.keys(d).map(k => ({ id: k, ...d[k] })) : [];
             renderProducts();
-            renderCart();
         });
     }
 
@@ -217,7 +218,7 @@
             currentUser = user;
             document.getElementById('mgmt-btn').style.display = ["Techniker", "Geschäftsführung", "Management"].includes(user.role) ? "block" : "none";
             showScreen('main-system');
-            customNotify(`Willkommen, ${user.u}`);
+            customNotify(`Eingeloggt als ${user.u}`);
         } else customNotify("Login fehlgeschlagen!", "error");
     }
 
@@ -231,20 +232,26 @@
     function refreshMgmt() {
         const grid = document.getElementById('emp-grid'); grid.innerHTML = "";
         const roles = ["Techniker", "Geschäftsführung", "Management", "Caffeespezialist", "barista", "Azubi"];
+        
         employees.forEach((e) => {
             let roleOptions = roles.map(role => `<option value="${role}" ${e.role === role ? 'selected' : ''}>${role}</option>`).join("");
             grid.innerHTML += `<div class="emp-card glass">
                 <input type="text" value="${e.u}" onchange="rtdb.ref('employees/${e.id}').update({u:this.value, name:this.value})">
                 <input type="password" value="${e.p}" onchange="rtdb.ref('employees/${e.id}').update({p:this.value})" style="margin:10px 0;">
-                <select onchange="rtdb.ref('employees/${e.id}').update({role:this.value})" style="margin-bottom:10px; font-size:12px;">${roleOptions}</select>
+                <select onchange="rtdb.ref('employees/${e.id}').update({role:this.value})" style="margin-bottom:10px; font-size:12px;">
+                    ${roleOptions}
+                </select>
                 ${e.u !== 'OM_MA' ? `<button class="btn-danger" onclick="rtdb.ref('employees/${e.id}').remove()">Löschen</button>` : ''}
             </div>`;
         });
+        
         const tbody = document.getElementById('stock-tbody'); tbody.innerHTML = "";
         products.forEach(p => {
-            tbody.innerHTML += `<tr style="border-bottom:1px solid rgba(255,255,255,0.1);"><td style="padding:15px;">${p.name}</td>
+            tbody.innerHTML += `<tr style="border-bottom:1px solid rgba(255,255,255,0.1);">
+                <td style="padding:15px;">${p.name}</td>
                 <td><input type="number" value="${p.stock}" onchange="rtdb.ref('products/${p.id}').update({stock:parseInt(this.value)})" style="width:80px;"></td>
-                <td style="text-align:right;"><button class="btn-primary" onclick="customNotify('Gespeichert')">Save</button></td></tr>`;
+                <td style="text-align:right;"><button class="btn-primary" onclick="customNotify('Gespeichert')">Save</button></td>
+            </tr>`;
         });
     }
 
@@ -255,12 +262,12 @@
             container.innerHTML += `<div class="category-title">${cat}</div>`;
             const g = document.createElement('div'); g.className = "products-grid";
             products.filter(p => p.category === cat).forEach(p => {
-                const cartQty = cart[p.id] ? cart[p.id].qty : 0;
+                const currentQty = cart[p.id] ? cart[p.id].qty : 0;
                 g.innerHTML += `<div class="product-card glass">
                     <strong>${p.name}</strong><br><small>${p.price.toFixed(2)}€</small><br><span style="font-size:10px; opacity:0.7;">Lager: ${p.stock}</span>
                     <div class="qty-controls">
                         <button class="qty-btn" onclick="updateQty('${p.id}', -1)">-</button>
-                        <input type="number" id="qty-${p.id}" class="qty-input" value="${cartQty}" onchange="manualQty('${p.id}', this.value)">
+                        <input type="number" id="qty-${p.id}" class="qty-input" value="${currentQty}" onchange="manualQty('${p.id}', this.value)">
                         <button class="qty-btn" onclick="updateQty('${p.id}', 1)">+</button>
                     </div></div>`;
             });
@@ -269,22 +276,21 @@
     }
 
     function updateQty(id, d) {
-        let p = products.find(x => x.id === id);
         let current = cart[id] ? cart[id].qty : 0;
         let next = current + d;
-        if(next >= 0 && next <= p.stock) {
+        if(next >= 0) {
             manualQty(id, next);
-        } else if (next > p.stock) {
-            customNotify("Lagerbestand überschritten!", "error");
         }
     }
 
     function manualQty(id, v) {
         const p = products.find(x => x.id === id);
-        let val = Math.min(parseInt(v) || 0, p.stock);
-        if(val > 0) cart[id] = { name: p.name, qty: val, price: p.price };
-        else delete cart[id];
-        
+        let val = parseInt(v) || 0;
+        if(val > 0) {
+            cart[id] = { name: p.name, qty: val, price: p.price };
+        } else {
+            delete cart[id];
+        }
         const input = document.getElementById(`qty-${id}`);
         if(input) input.value = val;
         renderCart();
@@ -292,7 +298,7 @@
 
     function setDiscount(val, btn) {
         currentDiscount = val;
-        document.querySelectorAll('.discount-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.btn-discount').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         renderCart();
     }
@@ -305,23 +311,28 @@
                 <span>${cart[id].qty}x ${cart[id].name}</span><span>${(cart[id].qty*cart[id].price).toFixed(2)}€</span>
             </div>`;
         }
-        let total = subtotal * (1 - currentDiscount / 100);
+        const total = subtotal * (1 - currentDiscount / 100);
         document.getElementById('total-price').innerText = total.toFixed(2);
     }
 
     async function submitReceipt() {
         if(Object.keys(cart).length === 0) return customNotify("Warenkorb leer!", "error");
-        let d = `**Mitarbeiter:** ${currentUser.u}\n**Rabatt:** ${currentDiscount}%\n\n`;
+        const total = document.getElementById('total-price').innerText;
+        let d = `**Mitarbeiter:** ${currentUser.u}\n`;
+        if(currentDiscount > 0) d += `**Rabatt:** ${currentDiscount}%\n`;
+        d += `\n`;
         for(let id in cart) {
             const p = products.find(x => x.id === id);
             d += `• ${cart[id].qty}x ${p.name}\n`;
             let ns = p.stock - cart[id].qty;
-            rtdb.ref('products/' + id).update({stock: ns});
-            if(ns < 5) fetch(WEBHOOK_STOCK, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({content: `⚠️ **Lagerwarnung:** ${p.name} nur noch ${ns} Stück!`})});
+            rtdb.ref('products/' + id).update({stock: ns < 0 ? 0 : ns});
+            if(ns < 10) fetch(WEBHOOK_STOCK, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({content: `⚠️ **Lagerwarnung:** ${p.name} nur noch ${ns} Stück!`})});
         }
-        await fetch(WEBHOOK_REC, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({embeds:[{title:"Neue Bestellung", description: d + `\n**Gesamt: ${document.getElementById('total-price').innerText}€**`, color: 0xc49fff}]})});
+        await fetch(WEBHOOK_REC, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({embeds:[{title:"Neue Bestellung", description: d + `\n**Gesamt: ${total}€**`, color: 0xc49fff}]})});
         customNotify("Quittung wurde gesendet!");
-        cart = {}; renderCart(); renderProducts();
+        cart = {}; 
+        renderCart();
+        renderProducts();
     }
 
     function toggleDuty() {
