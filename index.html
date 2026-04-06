@@ -123,15 +123,17 @@
                 <button class="btn-primary" onclick="createEmployee()">Hinzufügen</button>
             </div>
         </div>
-        <h3 class="category-title">Mitarbeiter & Logins</h3>
-        <div id="emp-grid" class="mgmt-card-grid"></div>
+        
         <h3 class="category-title">Lagerverwaltung</h3>
         <div class="glass" style="padding:20px;">
             <table style="width:100%; text-align:left; border-collapse:collapse;" id="stock-table">
-                <thead><tr style="color:#a0c4ff;"><th>Produkt</th><th>Bestand</th><th>Aktion</th></tr></thead>
+                <thead><tr style="color:#a0c4ff;"><th>Produkt</th><th>Bestand aktuell</th><th>Neuer Bestand</th><th>Aktion</th></tr></thead>
                 <tbody id="stock-tbody"></tbody>
             </table>
         </div>
+
+        <h3 class="category-title">Mitarbeiter & Logins</h3>
+        <div id="emp-grid" class="mgmt-card-grid"></div>
     </div>
 </div>
 
@@ -159,6 +161,7 @@
     let employees = [];
     let currentUser = null, cart = {}, onDuty = false, currentDiscount = 0;
 
+    // INITIAL SETUP: Only runs if database is empty
     function checkInitialSetup() {
         rtdb.ref('products').once('value', (s) => {
             if (!s.exists()) {
@@ -195,6 +198,7 @@
         });
         rtdb.ref('products').on('value', (s) => {
             const d = s.val();
+            // Store products globally
             products = d ? Object.keys(d).map(k => ({ id: k, ...d[k] })) : [];
             renderProducts();
             if(document.getElementById('mgmt-system').style.display === 'flex') refreshMgmt();
@@ -254,16 +258,21 @@
         products.forEach(p => {
             tbody.innerHTML += `<tr style="border-bottom:1px solid rgba(255,255,255,0.1);">
                 <td style="padding:15px;">${p.name}</td>
-                <td><input type="number" id="stock-val-${p.id}" value="${p.stock}" style="width:80px;"></td>
-                <td style="text-align:right;"><button class="btn-primary" onclick="saveStock('${p.id}')">Save</button></td>
+                <td style="color:#a0c4ff; font-weight:bold;">${p.stock}</td>
+                <td><input type="number" id="stock-input-${p.id}" placeholder="Zahl..." style="width:100px;"></td>
+                <td style="text-align:right;"><button class="btn-primary" onclick="updateFirebaseStock('${p.id}')">Speichern</button></td>
             </tr>`;
         });
     }
 
-    function saveStock(id) {
-        const val = parseInt(document.getElementById(`stock-val-${id}`).value) || 0;
-        rtdb.ref('products/' + id).update({stock: val}).then(() => {
-            customNotify("Bestand gespeichert");
+    function updateFirebaseStock(id) {
+        const newVal = document.getElementById(`stock-input-${id}`).value;
+        if(newVal === "") return customNotify("Bitte Wert eingeben!", "error");
+        
+        rtdb.ref('products/' + id).update({
+            stock: parseInt(newVal)
+        }).then(() => {
+            customNotify("Lagerbestand in Firebase aktualisiert!");
         });
     }
 
@@ -329,19 +338,27 @@
 
     async function submitReceipt() {
         if(Object.keys(cart).length === 0) return customNotify("Warenkorb leer!", "error");
+        if(!onDuty) return customNotify("Zuerst einstempeln!", "error");
+        
         const total = document.getElementById('total-price').innerText;
         let d = `**Mitarbeiter:** ${currentUser.u}\n`;
         if(currentDiscount > 0) d += `**Rabatt:** ${currentDiscount}%\n`;
         d += `\n`;
+        
         for(let id in cart) {
             const p = products.find(x => x.id === id);
             d += `• ${cart[id].qty}x ${p.name}\n`;
+            
+            // Deduct from Firebase
             let ns = p.stock - cart[id].qty;
             rtdb.ref('products/' + id).update({stock: ns < 0 ? 0 : ns});
+            
             if(ns < 10) fetch(WEBHOOK_STOCK, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({content: `⚠️ **Lagerwarnung:** ${p.name} nur noch ${ns} Stück!`})});
         }
+        
         await fetch(WEBHOOK_REC, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({embeds:[{title:"Neue Bestellung", description: d + `\n**Gesamt: ${total}€**`, color: 0xc49fff}]})});
-        customNotify("Quittung wurde gesendet!");
+        
+        customNotify("Quittung gesendet & Lager aktualisiert!");
         cart = {}; 
         renderCart();
         renderProducts();
@@ -358,6 +375,7 @@
     setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleTimeString(); }, 1000);
     window.onload = loadData;
 
+    // BG Animation
     const canvas = document.getElementById('bg-canvas'), ctx = canvas.getContext('2d');
     let w, h, pts = [];
     const m = { x: null, y: null };
