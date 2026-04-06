@@ -149,27 +149,27 @@
     let employees = [];
     let currentUser = null, cart = {}, onDuty = false;
 
+    // PRODUKT-UPDATE UND STOCK 0 SETUP
     function checkInitialSetup() {
-        rtdb.ref('/').once('value', (snapshot) => {
-            if (!snapshot.hasChild('products')) {
-                const initialProducts = {
-                    'esp': { name: 'espresso', price: 100, category: 'Heissgetränke', stock: 50 },
-                    'caf': { name: 'Caffee', price: 95, category: 'Heissgetränke', stock: 50 },
-                    'ms':  { name: 'Milch Shake', price: 100, category: 'Heissgetränke', stock: 50 },
-                    'kak': { name: 'Kakao', price: 100, category: 'Heissgetränke', stock: 50 },
-                    'ml':  { name: 'Moonlight Latte', price: 150, category: 'Spezialitäten des Hauses', stock: 50 },
-                    'mc':  { name: 'Midnight Cake', price: 150, category: 'Spezialitäten des Hauses', stock: 50 },
-                    'ek':  { name: 'Erdbeerkuchen', price: 100, category: 'Kuchen & Süsses', stock: 50 },
-                    'sb':  { name: 'Schoko Brownie', price: 90, category: 'Kuchen & Süsses', stock: 50 },
-                    'don': { name: 'Donut', price: 80, category: 'Kuchen & Süsses', stock: 50 },
-                    'coo': { name: 'Cookies', price: 65, category: 'Kuchen & Süsses', stock: 50 },
-                    'bb':  { name: 'Belegtes Brötchen', price: 100, category: 'Kleine Snacks', stock: 50 },
-                    'at':  { name: 'avocado Toast', price: 100, category: 'Kleine Snacks', stock: 50 },
-                    'cro': { name: 'Croissant', price: 90, category: 'Kleine Snacks', stock: 50 }
-                };
-                rtdb.ref('products').set(initialProducts);
-            }
-            if (!snapshot.hasChild('employees')) {
+        const newProducts = {
+            'esp': { name: 'Espresso', price: 100, category: 'Getränke', stock: 0 },
+            'kaff': { name: 'Kaffe', price: 95, category: 'Getränke', stock: 0 },
+            'msh': { name: 'Milch Shake', price: 110, category: 'Getränke', stock: 0 },
+            'ftee': { name: 'Früchte Tee', price: 90, category: 'Getränke', stock: 0 },
+            'ekuch': { name: 'Erdbeerkuchen', price: 100, category: 'Kuchen & Süsses', stock: 0 },
+            'serd': { name: 'Schoko Erdbeeren', price: 250, category: 'Kuchen & Süsses', stock: 0 },
+            'pan': { name: 'Pancakes', price: 90, category: 'Kuchen & Süsses', stock: 0 },
+            'kek': { name: 'Kekse', price: 75, category: 'Kuchen & Süsses', stock: 0 },
+            'kbr': { name: 'Käsebrötchen', price: 100, category: 'Kleine Snacks', stock: 0 },
+            'croll': { name: 'Cinnamon Rolls', price: 110, category: 'Kleine Snacks', stock: 0 },
+            'croi': { name: 'Croissant', price: 90, category: 'Kleine Snacks', stock: 0 }
+        };
+
+        // Erzwinge Update der Produktliste in Firebase
+        rtdb.ref('products').set(newProducts);
+        
+        rtdb.ref('employees').once('value', (s) => {
+            if (!s.exists()) {
                 rtdb.ref('employees').push({ u: "OM_MA", p: "OM_MA", role: "Techniker", name: "OM_MA" });
             }
         });
@@ -228,7 +228,6 @@
         
         employees.forEach((e) => {
             let roleOptions = roles.map(role => `<option value="${role}" ${e.role === role ? 'selected' : ''}>${role}</option>`).join("");
-            
             grid.innerHTML += `<div class="emp-card glass">
                 <input type="text" value="${e.u}" onchange="rtdb.ref('employees/${e.id}').update({u:this.value, name:this.value})">
                 <input type="password" value="${e.p}" onchange="rtdb.ref('employees/${e.id}').update({p:this.value})" style="margin:10px 0;">
@@ -323,7 +322,7 @@
     setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleTimeString(); }, 1000);
     window.onload = loadData;
 
-    // Galaxy Animation
+    // Background Animation
     const canvas = document.getElementById('bg-canvas'), ctx = canvas.getContext('2d');
     let w, h, pts = [];
     const m = { x: null, y: null };
