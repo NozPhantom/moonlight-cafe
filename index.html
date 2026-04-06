@@ -114,9 +114,10 @@
                 <select id="new-r">
                     <option>Techniker</option>
                     <option>Geschäftsführung</option>
+                    <option>Stv. Geschäftsführung</option>
                     <option>Management</option>
-                    <option>Caffeespezialist</option>
-                    <option>barista</option>
+                    <option>Kaffeespezialist</option>
+                    <option>Barista</option>
                     <option>Azubi</option>
                 </select>
                 <button class="btn-primary" onclick="createEmployee()">Hinzufügen</button>
@@ -216,7 +217,8 @@
         const user = employees.find(e => e.u === u && e.p === p);
         if(user) {
             currentUser = user;
-            document.getElementById('mgmt-btn').style.display = ["Techniker", "Geschäftsführung", "Management"].includes(user.role) ? "block" : "none";
+            // Berechtigungen angepasst: Stv. Geschäftsführung hat jetzt auch Zugriff
+            document.getElementById('mgmt-btn').style.display = ["Techniker", "Geschäftsführung", "Stv. Geschäftsführung", "Management"].includes(user.role) ? "block" : "none";
             showScreen('main-system');
             customNotify(`Eingeloggt als ${user.u}`);
         } else customNotify("Login fehlgeschlagen!", "error");
@@ -231,7 +233,7 @@
 
     function refreshMgmt() {
         const grid = document.getElementById('emp-grid'); grid.innerHTML = "";
-        const roles = ["Techniker", "Geschäftsführung", "Management", "Caffeespezialist", "barista", "Azubi"];
+        const roles = ["Techniker", "Geschäftsführung", "Stv. Geschäftsführung", "Management", "Kaffeespezialist", "Barista", "Azubi"];
         
         employees.forEach((e) => {
             let roleOptions = roles.map(role => `<option value="${role}" ${e.role === role ? 'selected' : ''}>${role}</option>`).join("");
