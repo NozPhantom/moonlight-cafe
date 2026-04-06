@@ -160,21 +160,24 @@
     let currentUser = null, cart = {}, onDuty = false, currentDiscount = 0;
 
     function checkInitialSetup() {
-        const newProducts = {
-            'esp': { name: 'Espresso', price: 100, category: 'Getränke', stock: 0 },
-            'kaff': { name: 'Kaffee', price: 95, category: 'Getränke', stock: 0 },
-            'msh': { name: 'Milch Shake', price: 110, category: 'Getränke', stock: 0 },
-            'ftee': { name: 'Früchte Tee', price: 90, category: 'Getränke', stock: 0 },
-            'ekuch': { name: 'Erdbeerkuchen', price: 100, category: 'Kuchen & Süsses', stock: 0 },
-            'serd': { name: 'Schoko Erdbeeren', price: 250, category: 'Kuchen & Süsses', stock: 0 },
-            'pan': { name: 'Pancakes', price: 90, category: 'Kuchen & Süsses', stock: 0 },
-            'kek': { name: 'Kekse', price: 75, category: 'Kuchen & Süsses', stock: 0 },
-            'kbr': { name: 'Käsebrötchen', price: 100, category: 'Kleine Snacks', stock: 0 },
-            'croll': { name: 'Cinnamon Rolls', price: 110, category: 'Kleine Snacks', stock: 0 },
-            'croi': { name: 'Croissant', price: 90, category: 'Kleine Snacks', stock: 0 }
-        };
-
-        rtdb.ref('products').set(newProducts);
+        rtdb.ref('products').once('value', (s) => {
+            if (!s.exists()) {
+                const initialProducts = {
+                    'esp': { name: 'Espresso', price: 100, category: 'Getränke', stock: 0 },
+                    'kaff': { name: 'Kaffee', price: 95, category: 'Getränke', stock: 0 },
+                    'msh': { name: 'Milch Shake', price: 110, category: 'Getränke', stock: 0 },
+                    'ftee': { name: 'Früchte Tee', price: 90, category: 'Getränke', stock: 0 },
+                    'ekuch': { name: 'Erdbeerkuchen', price: 100, category: 'Kuchen & Süsses', stock: 0 },
+                    'serd': { name: 'Schoko Erdbeeren', price: 250, category: 'Kuchen & Süsses', stock: 0 },
+                    'pan': { name: 'Pancakes', price: 90, category: 'Kuchen & Süsses', stock: 0 },
+                    'kek': { name: 'Kekse', price: 75, category: 'Kuchen & Süsses', stock: 0 },
+                    'kbr': { name: 'Käsebrötchen', price: 100, category: 'Kleine Snacks', stock: 0 },
+                    'croll': { name: 'Cinnamon Rolls', price: 110, category: 'Kleine Snacks', stock: 0 },
+                    'croi': { name: 'Croissant', price: 90, category: 'Kleine Snacks', stock: 0 }
+                };
+                rtdb.ref('products').set(initialProducts);
+            }
+        });
         
         rtdb.ref('employees').once('value', (s) => {
             if (!s.exists()) {
@@ -194,6 +197,7 @@
             const d = s.val();
             products = d ? Object.keys(d).map(k => ({ id: k, ...d[k] })) : [];
             renderProducts();
+            if(document.getElementById('mgmt-system').style.display === 'flex') refreshMgmt();
         });
     }
 
@@ -250,9 +254,16 @@
         products.forEach(p => {
             tbody.innerHTML += `<tr style="border-bottom:1px solid rgba(255,255,255,0.1);">
                 <td style="padding:15px;">${p.name}</td>
-                <td><input type="number" value="${p.stock}" onchange="rtdb.ref('products/${p.id}').update({stock:parseInt(this.value)})" style="width:80px;"></td>
-                <td style="text-align:right;"><button class="btn-primary" onclick="customNotify('Gespeichert')">Save</button></td>
+                <td><input type="number" id="stock-val-${p.id}" value="${p.stock}" style="width:80px;"></td>
+                <td style="text-align:right;"><button class="btn-primary" onclick="saveStock('${p.id}')">Save</button></td>
             </tr>`;
+        });
+    }
+
+    function saveStock(id) {
+        const val = parseInt(document.getElementById(`stock-val-${id}`).value) || 0;
+        rtdb.ref('products/' + id).update({stock: val}).then(() => {
+            customNotify("Bestand gespeichert");
         });
     }
 
