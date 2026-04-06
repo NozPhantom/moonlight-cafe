@@ -162,7 +162,7 @@
     function checkInitialSetup() {
         const newProducts = {
             'esp': { name: 'Espresso', price: 100, category: 'Getränke', stock: 0 },
-            'kaff': { name: 'Kaffe', price: 95, category: 'Getränke', stock: 0 },
+            'kaff': { name: 'Kaffee', price: 95, category: 'Getränke', stock: 0 },
             'msh': { name: 'Milch Shake', price: 110, category: 'Getränke', stock: 0 },
             'ftee': { name: 'Früchte Tee', price: 90, category: 'Getränke', stock: 0 },
             'ekuch': { name: 'Erdbeerkuchen', price: 100, category: 'Kuchen & Süsses', stock: 0 },
@@ -217,7 +217,6 @@
         const user = employees.find(e => e.u === u && e.p === p);
         if(user) {
             currentUser = user;
-            // Berechtigungen angepasst: Stv. Geschäftsführung hat jetzt auch Zugriff
             document.getElementById('mgmt-btn').style.display = ["Techniker", "Geschäftsführung", "Stv. Geschäftsführung", "Management"].includes(user.role) ? "block" : "none";
             showScreen('main-system');
             customNotify(`Eingeloggt als ${user.u}`);
