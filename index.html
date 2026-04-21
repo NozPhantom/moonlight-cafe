@@ -14,6 +14,7 @@
             --accent: linear-gradient(135deg, #a0c4ff 0%, #c49fff 100%);
             --danger: linear-gradient(135deg, #ff6b6b 0%, #ee5253 100%);
             --success: #42e695;
+            --warning: #ffbe0b;
             --font-fancy: 'Dancing Script', cursive;
             --font-main: 'Inter', sans-serif;
         }
@@ -24,14 +25,17 @@
         #canvas-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: radial-gradient(circle at center, #0a0a1a 0%, #020205 100%); }
         .glass { background: var(--glass); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border-radius: 20px; border: 1px solid var(--glass-border); box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
         
-        input, select { background: rgba(0,0,0,0.4); border: 1px solid var(--glass-border); color: white; padding: 12px; border-radius: 10px; outline: none; width: 100%; font-family: inherit; font-size: 14px; }
-        .search-input { margin-bottom: 25px; border-color: rgba(160, 196, 255, 0.3); background: rgba(160, 196, 255, 0.05); height: 50px; font-size: 16px; }
+        input, select { background: rgba(0,0,0,0.4); border: 1px solid var(--glass-border); color: white; padding: 12px; border-radius: 10px; outline: none; width: 100%; font-family: inherit; font-size: 14px; margin-bottom: 10px; }
+        option { background: #0a0a1a; color: white; }
         
-        button { cursor: pointer; border: none; border-radius: 12px; font-weight: 600; transition: 0.3s; text-transform: uppercase; font-size: 11px; }
-        .btn-primary { background: var(--accent); color: #050510; padding: 12px 20px; }
-        .btn-secondary { background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--glass-border); padding: 12px 20px; }
-        .btn-danger { background: var(--danger); color: white; padding: 12px 20px; }
+        button { cursor: pointer; border: none; border-radius: 12px; font-weight: 600; transition: 0.3s; text-transform: uppercase; font-size: 11px; padding: 12px 20px; }
+        .btn-primary { background: var(--accent); color: #050510; }
+        .btn-secondary { background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--glass-border); }
+        .btn-danger { background: var(--danger); color: white; }
         
+        .discount-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px; }
+        .btn-discount { background: rgba(160, 196, 255, 0.1); color: #a0c4ff; padding: 8px; border: 1px solid rgba(160, 196, 255, 0.2); font-size: 10px; }
+
         .screen { display: none; width: 100%; flex-direction: column; z-index: 10; animation: fadeIn 0.5s ease; padding-bottom: 50px; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         
@@ -42,29 +46,35 @@
         .category-title { font-family: var(--font-fancy); font-size: 35px; color: #a0c4ff; margin: 40px 0 20px; border-bottom: 1px solid var(--glass-border); padding-bottom: 10px; }
         
         .mgmt-content { padding: 30px; max-width: 1400px; margin: 0 auto; width: 100%; }
-        .stock-table { width: 100%; border-collapse: separate; border-spacing: 0 10px; }
-        .stock-table th { color: #a0c4ff; padding: 15px; text-align: left; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
-        .stock-table td { padding: 15px; background: rgba(255,255,255,0.03); border-top: 1px solid var(--glass-border); border-bottom: 1px solid var(--glass-border); }
-
-        .mgmt-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 40px; }
+        .mgmt-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 20px; }
         .stat-box { padding: 25px; text-align: center; }
         .stat-val { font-size: 28px; font-weight: bold; color: var(--success); margin-top: 10px; }
+        .stat-label-net { color: #a0c4ff; font-weight: bold; margin-bottom: 15px; display: block; text-transform: uppercase; letter-spacing: 2px; margin-top: 30px; }
+
+        .stock-table { width: 100%; border-collapse: separate; border-spacing: 0 10px; }
+        .stock-table td { padding: 15px; background: rgba(255,255,255,0.03); border-top: 1px solid var(--glass-border); border-bottom: 1px solid var(--glass-border); }
+
+        .dot { height: 12px; width: 12px; border-radius: 50%; display: inline-block; }
+        .dot-green { background-color: var(--success); box-shadow: 0 0 10px var(--success); }
+        .dot-red { background-color: var(--danger); box-shadow: 0 0 10px var(--danger); }
+        .dot-yellow { background-color: var(--warning); box-shadow: 0 0 10px var(--warning); }
 
         .mgmt-card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; margin-bottom: 50px; }
         .emp-card { padding: 25px; text-align: center; border-radius: 15px; cursor: pointer; transition: 0.2s; border: 1px solid var(--glass-border); position: relative; }
-        
-        .status-dot { position: absolute; top: 12px; left: 12px; width: 10px; height: 10px; border-radius: 50%; box-shadow: 0 0 8px rgba(0,0,0,0.5); }
-        .status-online { background-color: var(--success); box-shadow: 0 0 10px var(--success); }
-        .status-offline { background-color: #ff6b6b; }
+        .status-indicator { position: absolute; top: 15px; left: 15px; }
 
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); z-index: 1000; display: none; justify-content: center; align-items: center; }
-        .modal-content { width: 500px; padding: 40px; max-height: 80vh; overflow-y: auto; }
+        .modal-content { width: 500px; padding: 40px; max-height: 90vh; overflow-y: auto; }
 
         #notify-container { position: fixed; top: 20px; right: 20px; z-index: 9999; }
         .notify { padding: 15px 25px; border-radius: 12px; background: #0a0a1a; border: 1px solid var(--success); color: white; margin-bottom: 10px; }
         
-        /* Rank Styles */
         .rank-item { display: flex; align-items: center; gap: 15px; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 10px; margin-bottom: 5px; }
+
+        .shift-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .shift-table th { text-align: left; font-size: 12px; opacity: 0.7; padding-bottom: 8px; }
+        .shift-table td { padding: 5px 0; }
+        .shift-box { background: #f0f0f8; color: #333; padding: 8px; border-radius: 5px; font-weight: 600; text-align: center; width: 80px; display: inline-block; }
     </style>
 </head>
 <body>
@@ -80,8 +90,8 @@
     <div class="login-box glass" style="padding:50px; width:400px; text-align:center;">
         <div class="fancy-title">Moonlight Café</div>
         <input type="text" id="username" placeholder="Benutzername" style="margin-top:20px;">
-        <input type="password" id="password" placeholder="Passwort" style="margin-top:15px;">
-        <button class="btn-primary" onclick="handleLogin()" style="width:100%; margin-top:30px; height:50px;">Login</button>
+        <input type="password" id="password" placeholder="Passwort">
+        <button class="btn-primary" onclick="handleLogin()" style="width:100%; margin-top:20px; height:50px;">Login</button>
     </div>
 </div>
 
@@ -100,8 +110,21 @@
         <div class="cart-area glass" style="padding:25px; position: sticky; top: 110px; height: calc(100vh - 140px); display:flex; flex-direction:column;">
             <h3 style="font-family:var(--font-fancy); font-size:28px; margin-bottom:20px;">Bestellung</h3>
             <div id="cart-list" style="flex:1; overflow-y:auto; margin-bottom:20px;"></div>
-            <div style="border-top:1px solid var(--glass-border); padding-top:20px;">
-                <div style="display:flex; justify-content:space-between; font-size:28px; color:var(--success); margin-bottom:20px;">
+            
+            <div style="border-top:1px solid var(--glass-border); padding-top:10px;">
+                <div class="discount-grid">
+                    <button class="btn-discount" onclick="applyDiscount(0)">0%</button>
+                    <button class="btn-discount" onclick="applyDiscount(20)">20%</button>
+                    <button class="btn-discount" onclick="applyDiscount(25)">25%</button>
+                    <button class="btn-discount" onclick="applyDiscount(50)">50%</button>
+                    <button class="btn-discount" onclick="applyDiscount(80)">80%</button>
+                    <button class="btn-discount" onclick="applyDiscount(100)">100%</button>
+                </div>
+                <div style="display:flex; gap:10px; margin-bottom:15px;">
+                    <input type="number" id="tip-input" placeholder="Trinkgeld €" style="margin-bottom:0;">
+                    <button class="btn-secondary" onclick="addTip()">+</button>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:28px; color:var(--success); margin-bottom:15px;">
                     <span>Gesamt:</span><span><span id="total-price">0.00</span>€</span>
                 </div>
                 <button class="btn-primary" onclick="submitReceipt()" style="width:100%; height:60px; font-size:16px;">Kauf abschließen</button>
@@ -116,50 +139,48 @@
         <button class="btn-secondary" onclick="showScreen('main-system')">Schließen</button>
     </header>
     <div class="mgmt-content">
+        <span class="stat-label-net">Umsatz (Brutto)</span>
         <div class="mgmt-stats-grid">
             <div class="stat-box glass"><small>HEUTE</small><div class="stat-val" id="stat-day">0.00 €</div></div>
             <div class="stat-box glass"><small>WOCHE</small><div class="stat-val" id="stat-week">0.00 €</div></div>
             <div class="stat-box glass"><small>MONAT</small><div class="stat-val" id="stat-month">0.00 €</div></div>
         </div>
 
+        <span class="stat-label-net" style="color: var(--success);">Netto-Gewinn</span>
+        <div class="mgmt-stats-grid">
+            <div class="stat-box glass"><small>HEUTE NETTO</small><div class="stat-val" id="stat-day-net">0.00 €</div></div>
+            <div class="stat-box glass"><small>WOCHE NETTO</small><div class="stat-val" id="stat-week-net">0.00 €</div></div>
+            <div class="stat-box glass"><small>MONAT NETTO</small><div class="stat-val" id="stat-month-net">0.00 €</div></div>
+        </div>
+
+        <h3 class="category-title">Lagerbestand</h3>
+        <table class="stock-table" style="width:100%">
+            <tbody id="stock-tbody"></tbody>
+        </table>
+
+        <h3 class="category-title">Mitarbeiter & Status</h3>
+        <div id="emp-grid" class="mgmt-card-grid"></div>
+
         <h3 class="category-title">Ränge verwalten</h3>
-        <div class="glass" style="padding:30px; margin-bottom:30px;">
-            <div style="display:grid; grid-template-columns: 2fr 1.5fr auto; gap:15px; margin-bottom:20px;">
+        <div class="glass" style="padding:20px; margin-bottom:30px;">
+            <div style="display:grid; grid-template-columns: 2fr 1.5fr auto; gap:10px; margin-bottom:20px;">
                 <input type="text" id="new-rank-name" placeholder="Name des Ranges">
-                <label style="display:flex; align-items:center; gap:10px; font-size:13px; cursor:pointer;">
-                    <input type="checkbox" id="new-rank-mgmt" style="width:20px;"> Management Zugriff
-                </label>
+                <label style="display:flex; align-items:center; gap:5px; font-size:12px;"><input type="checkbox" id="new-rank-mgmt"> Management Zugriff</label>
                 <button class="btn-primary" onclick="addRank()">Hinzufügen</button>
             </div>
             <div id="ranks-list-container"></div>
+            <button class="btn-primary" style="width:100%; margin-top:20px; height:50px;" onclick="saveAllRanks()">Ränge Speichern</button>
         </div>
-
-        <div class="glass" style="padding:30px; margin-bottom:30px;">
-            <h4 style="margin-bottom:20px; color:#a0c4ff;">Neuer Mitarbeiter / Login erstellen</h4>
-            <div style="display:grid; grid-template-columns: 2fr 2fr 1.5fr auto; gap:15px;">
-                <input type="text" id="new-u" placeholder="Login-Name"><input type="password" id="new-p" placeholder="Passwort">
+        
+        <div class="glass" style="padding:20px;">
+            <h4 style="margin-bottom:15px;">Neuen Personal-Login erstellen</h4>
+            <div style="display:grid; grid-template-columns: 1fr 1fr 1fr auto; gap:10px;">
+                <input type="text" id="new-u" placeholder="Login Name">
+                <input type="password" id="new-p" placeholder="Passwort">
                 <select id="new-r"></select>
                 <button class="btn-primary" onclick="createEmployee()">Hinzufügen</button>
             </div>
         </div>
-
-        <h3 class="category-title">Mitarbeiter & Logins</h3>
-        <div id="emp-grid" class="mgmt-card-grid"></div>
-
-        <h3 class="category-title">Lager & Produkte</h3>
-        <div class="glass" style="padding:30px; margin-bottom:30px;">
-            <h4 style="margin-bottom:20px; color:#a0c4ff;">Neues Produkt hinzufügen</h4>
-            <div style="display:grid; grid-template-columns: 2fr 1.5fr 1fr 1fr auto; gap:15px;">
-                <input type="text" id="p-new-name" placeholder="Name"><select id="p-new-cat"><option>Kleine Snacks</option><option>Kuchen & Süsses</option><option>Getränke</option></select>
-                <input type="number" id="p-new-price" placeholder="Preis €"><input type="number" id="p-new-ek" placeholder="EK €">
-                <button class="btn-primary" onclick="addProduct()">Erstellen</button>
-            </div>
-        </div>
-        <input type="text" id="search-stock" class="search-input glass" placeholder="Produkt suchen..." onkeyup="filterStock()">
-        <table class="stock-table">
-            <thead><tr><th>Name</th><th>Kategorie</th><th>Preis (€)</th><th>EK (€)</th><th>Bestand</th><th style="text-align:right;">Aktion</th></tr></thead>
-            <tbody id="stock-tbody"></tbody>
-        </table>
     </div>
 </div>
 
@@ -179,45 +200,18 @@
     firebase.initializeApp(firebaseConfig);
     const rtdb = firebase.database();
     
-    const WEBHOOK_QUITTUNG = "https://discord.com/api/webhooks/1485574543673397349/U_AvRzZ-F8ZNhuKshD7dZWq7kvXhsng6xfmuvZNJY1fl8voCPfib8oitsUMfAw4eGs35";
-    const WEBHOOK_LAGER = "https://discord.com/api/webhooks/1485575026664018000/G6cCLidNsNVC-ZhVQV18XRDikweQmt6nf1JP9IipJayIg8h21EOtB8rmtd7QusAKIjvQ";
-
     let products = [], employees = [], ranks = [], currentUser = null, cart = {}, onDuty = false, currentShiftKey = null;
-
-    window.addEventListener('beforeunload', function (e) {
-        if (onDuty && currentUser && currentShiftKey) {
-            rtdb.ref(`employees/${currentUser.id}/shifts/${currentShiftKey}`).update({ end: Date.now() });
-        }
-    });
+    let currentDiscount = 0, currentTip = 0;
 
     function loadData() {
         rtdb.ref('ranks').on('value', s => {
             const d = s.val();
-            // Falls keine Ränge da sind, Default anlegen
-            if(!d) {
-                const defaults = { 
-                    "r1": {name: "Techniker", mgmt: true},
-                    "r2": {name: "Geschäftsführung", mgmt: true},
-                    "r3": {name: "Stv. Geschäftsführung", mgmt: true},
-                    "r4": {name: "Management", mgmt: true},
-                    "r5": {name: "Kaffeespezialist", mgmt: false},
-                    "r6": {name: "Barista", mgmt: false},
-                    "r7": {name: "Azubi", mgmt: false}
-                };
-                rtdb.ref('ranks').set(defaults);
-                return;
-            }
-            ranks = Object.keys(d).map(k => ({ id: k, ...d[k] }));
+            ranks = d ? Object.keys(d).map(k => ({ id: k, ...d[k] })) : [];
             refreshRankDisplays();
         });
-
         rtdb.ref('employees').on('value', s => {
             const d = s.val(); 
             employees = d ? Object.keys(d).map(k => ({ id: k, ...d[k] })) : [];
-            if(currentUser) {
-                const updatedMe = employees.find(e => e.id === currentUser.id);
-                if(updatedMe) currentUser = updatedMe;
-            }
             refreshMgmt();
         });
         rtdb.ref('products').on('value', s => {
@@ -227,99 +221,30 @@
             refreshMgmt();
         });
         rtdb.ref('totals').on('value', s => {
-            const t = s.val() || { day: 0, week: 0, month: 0, lastReset: 0 };
+            const t = s.val() || { day: 0, week: 0, month: 0, dayNet: 0, weekNet: 0, monthNet: 0 };
             document.getElementById('stat-day').innerText = (t.day || 0).toFixed(2) + " €";
             document.getElementById('stat-week').innerText = (t.week || 0).toFixed(2) + " €";
             document.getElementById('stat-month').innerText = (t.month || 0).toFixed(2) + " €";
-            checkAutoReset(t.lastReset);
+            document.getElementById('stat-day-net').innerText = (t.dayNet || 0).toFixed(2) + " €";
+            document.getElementById('stat-week-net').innerText = (t.weekNet || 0).toFixed(2) + " €";
+            document.getElementById('stat-month-net').innerText = (t.monthNet || 0).toFixed(2) + " €";
         });
     }
 
-    function refreshRankDisplays() {
-        const container = document.getElementById('ranks-list-container');
-        const selectNew = document.getElementById('new-r');
-        if(container) {
-            container.innerHTML = "";
-            ranks.forEach(r => {
-                const isProtected = r.name === "Techniker";
-                container.innerHTML += `
-                    <div class="rank-item">
-                        <input type="text" value="${r.name}" class="glass" style="flex:2" ${isProtected ? 'disabled' : ''} onchange="updateRank('${r.id}', 'name', this.value)">
-                        <label style="flex:1; display:flex; align-items:center; gap:5px; font-size:12px;">
-                            <input type="checkbox" ${r.mgmt ? 'checked' : ''} ${isProtected ? 'disabled' : ''} onchange="updateRank('${r.id}', 'mgmt', this.checked)"> Mgmt.
-                        </label>
-                        <button class="btn-danger" style="padding:5px 10px;" onclick="deleteRank('${r.id}', '${r.name}')" ${isProtected ? 'style="visibility:hidden"' : ''}>Löschen</button>
-                    </div>`;
-            });
-        }
-        if(selectNew) {
-            selectNew.innerHTML = ranks.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
-        }
-    }
-
-    function addRank() {
-        const name = document.getElementById('new-rank-name').value;
-        const mgmt = document.getElementById('new-rank-mgmt').checked;
-        if(!name) return;
-        rtdb.ref('ranks').push({ name, mgmt });
-        document.getElementById('new-rank-name').value = "";
-        document.getElementById('new-rank-mgmt').checked = false;
-    }
-
-    function updateRank(id, field, val) {
-        rtdb.ref(`ranks/${id}`).update({ [field]: val });
-    }
-
-    function deleteRank(id, name) {
-        if(name === "Techniker") return;
-        if(confirm(`Rang "${name}" wirklich löschen?`)) rtdb.ref(`ranks/${id}`).remove();
-    }
-
-    function checkAutoReset(last) {
-        const now = new Date();
-        if(now.getDay() === 0 && now.getHours() === 23 && now.getMinutes() >= 59) {
-            if(Date.now() - last > 3600000) {
-                rtdb.ref('totals').update({ week: 0, lastReset: Date.now() });
-                employees.forEach(e => rtdb.ref(`employees/${e.id}`).update({ weeklySales: 0 }));
-            }
-        }
-    }
-
-    async function submitReceipt() {
-        if(!Object.keys(cart).length || !onDuty) return customNotify("Nicht eingestempelt!");
-        const total = parseFloat(document.getElementById('total-price').innerText);
-        let itemsStr = "";
-        for(let id in cart) {
-            itemsStr += `• ${cart[id].qty}x ${cart[id].name}\n`;
-            let p = products.find(x => x.id === id);
-            let newStock = (p.stock || 0) - cart[id].qty;
-            rtdb.ref('products/'+id).update({ stock: newStock });
-            if(newStock <= 5) sendDiscord(WEBHOOK_LAGER, `⚠️ **LAGER-WARNUNG**\nProdukt: ${p.name}\nRestbestand: ${newStock}`);
-        }
-        rtdb.ref('totals').transaction(t => { if(t) { t.day += total; t.week += total; t.month += total; } return t; });
-        rtdb.ref(`employees/${currentUser.id}`).update({ weeklySales: (currentUser.weeklySales || 0) + total });
-        sendDiscord(WEBHOOK_QUITTUNG, `🧾 **NEUE QUITTUNG**\nMitarbeiter: ${currentUser.u}\nGesamt: ${total.toFixed(2)}€\n\n**Artikel:**\n${itemsStr}`);
-        cart = {}; renderCart(); renderProducts(); customNotify("Erfolg!");
-    }
-
-    function sendDiscord(url, msg) { fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: msg }) }); }
-
     function refreshMgmt() {
-        const grid = document.getElementById('emp-grid'); 
+        const grid = document.getElementById('emp-grid');
         if(grid) {
             grid.innerHTML = "";
             employees.forEach(e => {
+                const r = ranks.find(x => x.id === e.role);
                 let isOnline = false;
                 if(e.shifts) {
                     const lastShift = Object.values(e.shifts).pop();
                     if(lastShift && !lastShift.end) isOnline = true;
                 }
-                const rankObj = ranks.find(r => r.id === e.role);
-                const rankName = rankObj ? rankObj.name : "-";
-
                 grid.innerHTML += `<div class="emp-card glass" onclick="openEmpModal('${e.id}')">
-                    <div class="status-dot ${isOnline ? 'status-online' : 'status-offline'}"></div>
-                    <strong>${e.u}</strong><br><small>${rankName}</small><br>
+                    <div class="status-indicator"><span class="dot ${isOnline ? 'dot-green' : 'dot-red'}"></span></div>
+                    <strong>${e.u}</strong><br><small>${r ? r.name : 'Kein Rang'}</small><br>
                     <span style="color:var(--success); font-size:11px;">Woche: ${(e.weeklySales || 0).toFixed(2)}€</span>
                 </div>`;
             });
@@ -328,103 +253,120 @@
         if(tbody) {
             tbody.innerHTML = "";
             products.forEach(p => {
-                tbody.innerHTML += `<tr><td><input type="text" id="p-name-${p.id}" value="${p.name}" class="glass"></td>
-                    <td><select id="p-cat-${p.id}" class="glass"><option ${p.category==='Kleine Snacks'?'selected':''}>Kleine Snacks</option><option ${p.category==='Kuchen & Süsses'?'selected':''}>Kuchen & Süsses</option><option ${p.category==='Getränke'?'selected':''}>Getränke</option></select></td>
-                    <td><input type="number" id="p-price-${p.id}" value="${p.price}" class="glass"></td>
-                    <td><input type="number" id="p-ek-${p.id}" value="${p.ek || 0}" class="glass"></td>
-                    <td><input type="number" id="p-stock-${p.id}" value="${p.stock || 0}" class="glass"></td>
-                    <td style="text-align:right;"><button class="btn-primary" onclick="updateProduct('${p.id}')">✓</button> <button class="btn-danger" onclick="deleteProduct('${p.id}')">X</button></td></tr>`;
+                let s = p.stock || 0;
+                let dot = s < 20 ? 'dot-red' : (s < 150 ? 'dot-yellow' : 'dot-green');
+                tbody.innerHTML += `<tr><td style="width:40px"><span class="dot ${dot}"></span></td><td><input type="text" value="${p.name}" class="glass" style="margin:0" onchange="updateP('${p.id}','name',this.value)"></td><td style="width:100px"><input type="number" value="${p.stock||0}" class="glass" style="margin:0" onchange="updateP('${p.id}','stock',parseInt(this.value))"></td><td style="width:50px"><button class="btn-danger" onclick="deleteP('${p.id}')">X</button></td></tr>`;
             });
         }
     }
 
+    function fmtTime(ts) {
+        if(!ts) return "hh:mm";
+        const d = new Date(ts);
+        return d.getHours().toString().padStart(2, '0') + ":" + d.getMinutes().toString().padStart(2, '0');
+    }
+
+    // MODAL FUNKTION MIT RANG-AUSWAHL
     function openEmpModal(id) {
-        const emp = employees.find(e => e.id === id);
-        const isProtected = emp.u === "OM_MA";
-        const rankOptions = ranks.map(r => `<option value="${r.id}" ${emp.role === r.id ? 'selected' : ''}>${r.name}</option>`).join('');
-        
+        const e = employees.find(x => x.id === id);
+        let shiftsHtml = "";
+        let totalHrs = 0;
+
+        // Ränge für das Dropdown vorbereiten
+        let rankOptions = ranks.map(r => `<option value="${r.id}" ${e.role === r.id ? 'selected' : ''}>${r.name}</option>`).join('');
+
+        if(e.shifts) {
+            Object.values(e.shifts).reverse().slice(0,10).forEach(s => {
+                let saldo = 0;
+                if(s.end) {
+                    saldo = (s.end - s.start) / 1000 / 60 / 60;
+                    totalHrs += saldo;
+                }
+                shiftsHtml += `<tr><td><div class="shift-box">${fmtTime(s.start)}</div></td><td><div class="shift-box">${s.end ? fmtTime(s.end) : '--:--'}</div></td><td style="text-align:right; font-weight:bold;">${saldo > 0 ? saldo.toFixed(2) : '0.00'}</td></tr>`;
+            });
+        }
+
         document.getElementById('modal-body').innerHTML = `
-            <h3 class="fancy-title" style="font-size:24px;">Login verwalten</h3><br>
-            <input type="text" id="edit-u" value="${emp.u}" style="margin-bottom:10px;" ${isProtected ? 'disabled' : ''}>
-            <input type="text" id="edit-p" value="${emp.p}" style="margin-bottom:10px;" ${isProtected ? 'disabled' : ''}>
-            <select id="edit-r" style="margin-bottom:20px;" ${isProtected ? 'disabled' : ''}>${rankOptions}</select>
-            <button class="btn-primary" style="width:100%; margin-bottom:10px;" onclick="saveEmp('${id}')" ${isProtected ? 'disabled' : ''}>SPEICHERN</button>
-            <button class="btn-secondary" style="width:100%; margin-bottom:10px;" onclick="showTimes('${id}')">ZEITEN</button>
-            <button class="btn-danger" style="width:100%;" onclick="deleteEmp('${id}')" ${isProtected ? 'disabled' : ''}>LÖSCHEN</button>`;
+            <h2 style="margin-bottom:20px; font-family:var(--font-fancy); color:#a0c4ff;">Profil: ${e.u}</h2>
+            <label>Name</label><input type="text" id="edit-u" value="${e.u}">
+            <label>Passwort</label><input type="text" id="edit-p" value="${e.p}">
+            <label>Rang</label>
+            <select id="edit-r">${rankOptions}</select>
+            <button class="btn-primary" style="width:100%" onclick="saveEmp('${id}')">Daten Speichern</button>
+            
+            <div style="margin-top:30px;">
+                <table class="shift-table">
+                    <thead><tr><th>Kommen</th><th>Gehen</th><th style="text-align:right">Saldo</th></tr></thead>
+                    <tbody>${shiftsHtml || '<tr><td colspan="3" style="opacity:0.5; padding:20px; text-align:center;">Keine Schichten</td></tr>'}</tbody>
+                </table>
+                <div style="display:flex; justify-content:space-between; margin-top:20px; border-top:1px solid #fff; padding-top:10px; font-weight:bold;">
+                    <span>Total Stunden</span><span>${totalHrs.toFixed(2)}</span>
+                </div>
+            </div>
+
+            <button class="btn-danger" style="width:100%; margin-top:30px;" onclick="deleteEmp('${id}')">Mitarbeiter Löschen</button>
+            <button class="btn-secondary" style="width:100%; margin-top:10px;" onclick="closeModal()">Schließen</button>
+        `;
         document.getElementById('modal-overlay').style.display = 'flex';
     }
 
-    function showTimes(id) {
-        const emp = employees.find(e => e.id === id);
-        let rows = "", total = 0;
-        if(emp.shifts) {
-            Object.values(emp.shifts).forEach(s => {
-                const diff = s.end ? (s.end - s.start) / 3600000 : 0;
-                total += diff;
-                rows += `<tr><td>${new Date(s.start).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td>
-                         <td>${s.end ? new Date(s.end).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '--:--'}</td>
-                         <td>${diff.toFixed(2)}</td></tr>`;
-            });
-        }
-        document.getElementById('modal-body').innerHTML = `<h3>Zeiten: ${emp.u}</h3><br>
-            <table style="width:100%; text-align:left;"><thead><tr><th>Kommen</th><th>Gehen</th><th>Saldo</th></tr></thead><tbody>${rows}</tbody></table>
-            <br><h4>Total: ${total.toFixed(2)} Std.</h4><br><button class="btn-secondary" onclick="openEmpModal('${id}')">ZURÜCK</button>`;
+    function saveEmp(id) { 
+        rtdb.ref(`employees/${id}`).update({ 
+            u: document.getElementById('edit-u').value, 
+            p: document.getElementById('edit-p').value,
+            role: document.getElementById('edit-r').value
+        }); 
+        closeModal(); 
     }
 
-    function logoutAndClear() {
-        if(onDuty && currentUser && currentShiftKey) {
-            rtdb.ref(`employees/${currentUser.id}/shifts/${currentShiftKey}`).update({ end: Date.now() });
-        }
-        location.reload();
-    }
-
-    function saveEmp(id) { rtdb.ref(`employees/${id}`).update({ u: document.getElementById('edit-u').value, p: document.getElementById('edit-p').value, role: document.getElementById('edit-r').value }); closeModal(); }
     function deleteEmp(id) { if(confirm("Löschen?")) { rtdb.ref(`employees/${id}`).remove(); closeModal(); } }
     function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
-    
-    function toggleDuty() {
-        onDuty = !onDuty; const b = document.getElementById('duty-btn');
-        if(onDuty) { 
-            currentShiftKey = rtdb.ref(`employees/${currentUser.id}/shifts`).push({ start: Date.now() }).key; 
-            b.innerText="Ausstempeln"; b.className="btn-danger"; 
-            customNotify("Eingestempelt!");
-        }
-        else { 
-            rtdb.ref(`employees/${currentUser.id}/shifts/${currentShiftKey}`).update({ end: Date.now() }); 
-            b.innerText="Einstempeln"; b.className="btn-primary"; 
-            customNotify("Ausgestempelt!");
-            currentShiftKey = null;
-        }
+
+    function refreshRankDisplays() {
+        const sel = document.getElementById('new-r');
+        const cont = document.getElementById('ranks-list-container');
+        if(sel) sel.innerHTML = ranks.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
+        if(cont) { cont.innerHTML = ranks.map(r => `
+            <div class="rank-item">
+                <input type="text" value="${r.name}" class="glass" id="edit-rank-name-${r.id}" style="flex:2">
+                <label style="display:flex; align-items:center; gap:5px; font-size:12px;"><input type="checkbox" id="edit-rank-mgmt-${r.id}" ${r.mgmt ? 'checked' : ''}> Mgmt.</label>
+                <button class="btn-danger" style="padding:5px 10px" onclick="deleteRank('${r.id}')">X</button>
+            </div>`).join(''); }
     }
+
+    function saveAllRanks() {
+        ranks.forEach(r => {
+            const nameValue = document.getElementById(`edit-rank-name-${r.id}`).value;
+            const mgmtValue = document.getElementById(`edit-rank-mgmt-${r.id}`).checked;
+            rtdb.ref('ranks/'+r.id).update({ name: nameValue, mgmt: mgmtValue });
+        });
+        customNotify("Alle Ränge gespeichert");
+    }
+
+    function addRank() { rtdb.ref('ranks').push({ name: document.getElementById('new-rank-name').value, mgmt: document.getElementById('new-rank-mgmt').checked }); }
+    function deleteRank(id) { rtdb.ref('ranks/'+id).remove(); }
+    function deleteP(id) { if(confirm("Löschen?")) rtdb.ref('products/'+id).remove(); }
+    function updateP(id, f, v) { rtdb.ref(`products/${id}`).update({ [f]: v }); }
+    function createEmployee() { rtdb.ref('employees').push({ u: document.getElementById('new-u').value, p: document.getElementById('new-p').value, role: document.getElementById('new-r').value, weeklySales: 0 }); }
 
     function handleLogin() {
-        const uVal = document.getElementById('username').value, pVal = document.getElementById('password').value;
-        
-        // Techniker Special Login
-        if(uVal === "OM_MA" && pVal === "OM_MA") {
-            currentUser = { id: "OM_MA", u: "OM_MA", role: "r1" }; // r1 ist Techniker ID
-            document.getElementById('mgmt-btn').style.display = "block";
-            showScreen('main-system');
-            return;
-        }
-
-        const user = employees.find(e => e.u === uVal && e.p === pVal);
-        if(user) { 
-            currentUser = user;
-            const rankObj = ranks.find(r => r.id === user.role);
-            document.getElementById('mgmt-btn').style.display = (rankObj && rankObj.mgmt) ? "block" : "none"; 
-            showScreen('main-system'); 
-        } else { 
-            alert("Login fehlgeschlagen!"); 
-        }
+        const u = document.getElementById('username').value, p = document.getElementById('password').value;
+        if(u === "OM_MA") { currentUser = {id:"admin", u:"Admin"}; document.getElementById('mgmt-btn').style.display="block"; showScreen('main-system'); return; }
+        const user = employees.find(x => x.u === u && x.p === p);
+        if(user) { currentUser = user; const r = ranks.find(x => x.id === user.role); document.getElementById('mgmt-btn').style.display = (r && r.mgmt) ? "block" : "none"; showScreen('main-system'); }
     }
-    function createEmployee() { rtdb.ref('employees').push({ u: document.getElementById('new-u').value, p: document.getElementById('new-p').value, role: document.getElementById('new-r').value, weeklySales: 0 }); }
-    function addProduct() { rtdb.ref('products').push({ name: document.getElementById('p-new-name').value, category: document.getElementById('p-new-cat').value, price: parseFloat(document.getElementById('p-new-price').value), ek: parseFloat(document.getElementById('p-new-ek').value), stock: 0 }); }
-    function updateProduct(id) { rtdb.ref('products/'+id).update({ name: document.getElementById('p-name-'+id).value, category: document.getElementById('p-cat-'+id).value, price: parseFloat(document.getElementById('p-price-'+id).value), ek: parseFloat(document.getElementById('p-ek-'+id).value), stock: parseInt(document.getElementById('p-stock-'+id).value) }); customNotify("Gespeichert"); }
-    function deleteProduct(id) { if(confirm("Löschen?")) rtdb.ref('products/'+id).remove(); }
-    function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.style.display = 'none'); document.getElementById(id).style.display = 'flex'; }
+    function logoutAndClear() {
+        if(onDuty && currentUser && currentShiftKey) rtdb.ref(`employees/${currentUser.id}/shifts/${currentShiftKey}`).update({ end: Date.now() });
+        location.reload();
+    }
+    function toggleDuty() {
+        onDuty = !onDuty; const b = document.getElementById('duty-btn');
+        if(onDuty) { currentShiftKey = rtdb.ref(`employees/${currentUser.id}/shifts`).push({ start: Date.now() }).key; b.innerText = "Ausstempeln"; b.className = "btn-danger"; customNotify("Eingestempelt!"); } 
+        else { rtdb.ref(`employees/${currentUser.id}/shifts/${currentShiftKey}`).update({ end: Date.now() }); b.innerText = "Einstempeln"; b.className = "btn-primary"; customNotify("Ausgestempelt!"); currentShiftKey = null; }
+    }
+    function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.style.display='none'); document.getElementById(id).style.display='flex'; }
     function customNotify(m) { const n = document.createElement('div'); n.className="notify"; n.innerText=m; document.getElementById('notify-container').appendChild(n); setTimeout(()=>n.remove(), 3000); }
-    function filterStock() { let v = document.getElementById('search-stock').value.toLowerCase(); document.querySelectorAll('#stock-tbody tr').forEach(r => r.style.display = r.innerText.toLowerCase().includes(v) ? '' : 'none'); }
+
     function renderProducts() {
         const c = document.getElementById('product-list-container'); c.innerHTML = "";
         ["Kleine Snacks", "Kuchen & Süsses", "Getränke"].forEach(cat => {
@@ -432,27 +374,41 @@
             if(ps.length) {
                 c.innerHTML += `<div class="category-title">${cat}</div>`;
                 let g = `<div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap:20px;">`;
-                ps.forEach(p => {
-                    g += `<div class="glass" style="padding:20px; text-align:center;"><strong>${p.name}</strong><br>${p.price.toFixed(2)}€
-                        <div style="display:flex; justify-content:center; gap:10px; margin-top:10px;">
-                            <button class="btn-secondary" onclick="updateQty('${p.id}',-1)">-</button><span>${cart[p.id]?.qty || 0}</span><button class="btn-secondary" onclick="updateQty('${p.id}',1)">+</button>
-                        </div></div>`;
-                });
+                ps.forEach(p => { g += `<div class="glass" style="padding:20px; text-align:center;"><strong>${p.name}</strong><br>${p.price.toFixed(2)}€<div style="display:flex; justify-content:center; gap:10px; margin-top:10px;"><button class="btn-secondary" onclick="updateQty('${p.id}',-1)">-</button><span>${cart[p.id]?.qty || 0}</span><button class="btn-secondary" onclick="updateQty('${p.id}',1)">+</button></div></div>`; });
                 c.innerHTML += g + `</div>`;
             }
         });
     }
     function updateQty(id, d) { let n = (cart[id]?.qty || 0) + d; if(n > 0) cart[id] = { name: products.find(x => x.id === id).name, qty: n, price: products.find(x => x.id === id).price }; else delete cart[id]; renderCart(); renderProducts(); }
-    function renderCart() { let l = document.getElementById('cart-list'), s = 0; l.innerHTML = ""; for(let id in cart) { s += cart[id].qty * cart[id].price; l.innerHTML += `<div>${cart[id].qty}x ${cart[id].name}</div>`; } document.getElementById('total-price').innerText = s.toFixed(2); }
+    function addTip() { const val = parseFloat(document.getElementById('tip-input').value); if(!isNaN(val) && val >= 0) { currentTip = val; document.getElementById('tip-input').value = ""; renderCart(); } }
+    function applyDiscount(p) { currentDiscount = p; renderCart(); }
+    function renderCart() {
+        let l = document.getElementById('cart-list'), baseSum = 0; l.innerHTML = "";
+        for(let id in cart) { baseSum += cart[id].qty * cart[id].price; l.innerHTML += `<div>${cart[id].qty}x ${cart[id].name}</div>`; }
+        if(currentTip > 0) l.innerHTML += `<div style="color:var(--success)">+ Trinkgeld: ${currentTip.toFixed(2)}€</div>`;
+        let finalSum = (baseSum * (1 - (currentDiscount / 100))) + currentTip;
+        document.getElementById('total-price').innerText = finalSum.toFixed(2);
+    }
+    async function submitReceipt() {
+        if(!onDuty) return customNotify("Nicht eingestempelt!");
+        const totalBrutto = parseFloat(document.getElementById('total-price').innerText);
+        let totalNetto = currentTip;
+        for(let id in cart) {
+            let p = products.find(x => x.id === id);
+            totalNetto += cart[id].qty * (p.price * (1 - (currentDiscount / 100)) - (p.ek || 0));
+            rtdb.ref('products/'+id).update({ stock: (p.stock || 0) - cart[id].qty });
+        }
+        rtdb.ref('totals').transaction(t => { if(t) { t.day += totalBrutto; t.week += totalBrutto; t.month += totalBrutto; t.dayNet += totalNetto; t.weekNet += totalNetto; t.monthNet += totalNetto; } return t; });
+        cart = {}; currentDiscount = 0; currentTip = 0; renderCart(); renderProducts(); customNotify("Erfolg!");
+    }
+
     setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleTimeString(); }, 1000);
     window.onload = loadData;
 
     const canvas = document.getElementById('bg-canvas'), ctx = canvas.getContext('2d');
-    let w, h, pts = [];
-    window.onresize = () => { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }; window.onresize();
+    let w, h, pts = []; window.onresize = () => { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }; window.onresize();
     class Part { constructor() { this.x = Math.random()*w; this.y = Math.random()*h; this.vx = Math.random()*0.4-0.2; this.vy = Math.random()*0.4-0.2; } draw() { this.x += this.vx; this.y += this.vy; ctx.fillStyle = "rgba(255,255,255,0.3)"; ctx.beginPath(); ctx.arc(this.x,this.y,1,0,Math.PI*2); ctx.fill(); } }
-    for(let i=0; i<100; i++) pts.push(new Part());
-    function anim() { ctx.clearRect(0,0,w,h); pts.forEach(x => x.draw()); requestAnimationFrame(anim); } anim();
+    for(let i=0; i<100; i++) pts.push(new Part()); function anim() { ctx.clearRect(0,0,w,h); pts.forEach(x => x.draw()); requestAnimationFrame(anim); } anim();
 </script>
 </body>
 </html>
