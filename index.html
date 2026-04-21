@@ -120,9 +120,10 @@
                     <button class="btn-discount" onclick="applyDiscount(80)">80%</button>
                     <button class="btn-discount" onclick="applyDiscount(100)">100%</button>
                 </div>
-                <div style="display:flex; gap:10px; margin-bottom:15px;">
-                    <input type="number" id="tip-input" placeholder="Trinkgeld €" style="margin-bottom:0;">
-                    <button class="btn-secondary" onclick="addTip()">+</button>
+                <div style="display:flex; gap:5px; margin-bottom:15px;">
+                    <input type="number" id="tip-input" placeholder="Trinkgeld €" style="margin-bottom:0; flex:1;">
+                    <button class="btn-secondary" onclick="addTip()" title="Hinzufügen" style="padding: 12px 15px;">+</button>
+                    <button class="btn-danger" onclick="removeTip()" title="Entfernen" style="padding: 12px 15px;">X</button>
                 </div>
                 <div style="display:flex; justify-content:space-between; font-size:28px; color:var(--success); margin-bottom:15px;">
                     <span>Gesamt:</span><span><span id="total-price">0.00</span>€</span>
@@ -203,6 +204,26 @@
     let products = [], employees = [], ranks = [], currentUser = null, cart = {}, onDuty = false, currentShiftKey = null;
     let currentDiscount = 0, currentTip = 0;
 
+    // TRINKGELD LOGIK
+    function addTip() { 
+        const val = parseFloat(document.getElementById('tip-input').value); 
+        if(!isNaN(val) && val > 0) { 
+            currentTip = val; 
+            document.getElementById('tip-input').value = ""; 
+            customNotify("Trinkgeld hinzugefügt");
+        } else {
+            currentTip = 0; // Setzt auf 0 wenn Feld leer/0
+        }
+        renderCart(); 
+    }
+
+    function removeTip() {
+        currentTip = 0;
+        document.getElementById('tip-input').value = "";
+        customNotify("Trinkgeld entfernt");
+        renderCart();
+    }
+
     function loadData() {
         rtdb.ref('ranks').on('value', s => {
             const d = s.val();
@@ -266,13 +287,10 @@
         return d.getHours().toString().padStart(2, '0') + ":" + d.getMinutes().toString().padStart(2, '0');
     }
 
-    // MODAL FUNKTION MIT RANG-AUSWAHL
     function openEmpModal(id) {
         const e = employees.find(x => x.id === id);
         let shiftsHtml = "";
         let totalHrs = 0;
-
-        // Ränge für das Dropdown vorbereiten
         let rankOptions = ranks.map(r => `<option value="${r.id}" ${e.role === r.id ? 'selected' : ''}>${r.name}</option>`).join('');
 
         if(e.shifts) {
@@ -290,10 +308,8 @@
             <h2 style="margin-bottom:20px; font-family:var(--font-fancy); color:#a0c4ff;">Profil: ${e.u}</h2>
             <label>Name</label><input type="text" id="edit-u" value="${e.u}">
             <label>Passwort</label><input type="text" id="edit-p" value="${e.p}">
-            <label>Rang</label>
-            <select id="edit-r">${rankOptions}</select>
+            <label>Rang</label><select id="edit-r">${rankOptions}</select>
             <button class="btn-primary" style="width:100%" onclick="saveEmp('${id}')">Daten Speichern</button>
-            
             <div style="margin-top:30px;">
                 <table class="shift-table">
                     <thead><tr><th>Kommen</th><th>Gehen</th><th style="text-align:right">Saldo</th></tr></thead>
@@ -303,7 +319,6 @@
                     <span>Total Stunden</span><span>${totalHrs.toFixed(2)}</span>
                 </div>
             </div>
-
             <button class="btn-danger" style="width:100%; margin-top:30px;" onclick="deleteEmp('${id}')">Mitarbeiter Löschen</button>
             <button class="btn-secondary" style="width:100%; margin-top:10px;" onclick="closeModal()">Schließen</button>
         `;
@@ -380,8 +395,9 @@
         });
     }
     function updateQty(id, d) { let n = (cart[id]?.qty || 0) + d; if(n > 0) cart[id] = { name: products.find(x => x.id === id).name, qty: n, price: products.find(x => x.id === id).price }; else delete cart[id]; renderCart(); renderProducts(); }
-    function addTip() { const val = parseFloat(document.getElementById('tip-input').value); if(!isNaN(val) && val >= 0) { currentTip = val; document.getElementById('tip-input').value = ""; renderCart(); } }
+    
     function applyDiscount(p) { currentDiscount = p; renderCart(); }
+    
     function renderCart() {
         let l = document.getElementById('cart-list'), baseSum = 0; l.innerHTML = "";
         for(let id in cart) { baseSum += cart[id].qty * cart[id].price; l.innerHTML += `<div>${cart[id].qty}x ${cart[id].name}</div>`; }
@@ -389,6 +405,7 @@
         let finalSum = (baseSum * (1 - (currentDiscount / 100))) + currentTip;
         document.getElementById('total-price').innerText = finalSum.toFixed(2);
     }
+    
     async function submitReceipt() {
         if(!onDuty) return customNotify("Nicht eingestempelt!");
         const totalBrutto = parseFloat(document.getElementById('total-price').innerText);
