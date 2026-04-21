@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MLC POS - Moonlight Galaxy Edition</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Inter:wght@300;400;600&display=swap');
+    <title id="page-title">MLC POS - Moonlight Galaxy Edition</title>
+    <style id="dynamic-styles">
+        @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Inter:wght@300;400;600&family=Roboto+Mono&family=Pacifico&family=Lobster&family=Bebas+Neue&family=Montserrat:wght@400;700&family=Oswald&family=Playfair+Display&family=Caveat&display=swap');
 
         :root {
             --bg-space: #020205;
@@ -18,9 +18,10 @@
             --font-fancy: 'Dancing Script', cursive;
             --font-main: 'Inter', sans-serif;
         }
-
+    </style>
+    <style>
         * { box-sizing: border-box; -webkit-font-smoothing: antialiased; margin: 0; padding: 0; }
-        body { font-family: var(--font-main); background: var(--bg-space); color: #f0f0f8; min-height: 100vh; overflow-x: hidden; overflow-y: auto; }
+        body { font-family: var(--font-main); background: var(--bg-space); color: #f0f0f8; min-height: 100vh; overflow-x: hidden; overflow-y: auto; transition: 0.3s; }
 
         #canvas-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: radial-gradient(circle at center, #0a0a1a 0%, #020205 100%); }
         .glass { background: var(--glass); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border-radius: 20px; border: 1px solid var(--glass-border); box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
@@ -79,6 +80,10 @@
         .shift-table th { text-align: left; font-size: 12px; opacity: 0.7; padding-bottom: 8px; }
         .shift-table td { padding: 5px 0; }
         .shift-box { background: #f0f0f8; color: #333; padding: 8px; border-radius: 5px; font-weight: 600; text-align: center; width: 80px; display: inline-block; }
+
+        /* Technik Spezifisch */
+        .color-preview { width: 35px; height: 35px; border-radius: 8px; cursor: pointer; border: 2px solid transparent; }
+        .color-preview:hover { border-color: white; }
     </style>
 </head>
 <body>
@@ -92,7 +97,8 @@
 
 <div id="login-screen" class="screen" style="display:flex; justify-content:center; align-items:center; height:100vh;">
     <div class="login-box glass" style="padding:50px; width:400px; text-align:center;">
-        <div class="fancy-title">Moonlight Café</div>
+        <div class="fancy-title" id="login-sys-name">Moonlight Café</div>
+        <p id="login-sys-desc" style="opacity: 0.6; margin-top: 10px; font-size: 14px;">Bitte logge dich ein.</p>
         <input type="text" id="username" placeholder="Benutzername" style="margin-top:20px;">
         <input type="password" id="password" placeholder="Passwort">
         <button class="btn-primary" onclick="handleLogin()" style="width:100%; margin-top:20px; height:50px;">Login</button>
@@ -102,8 +108,9 @@
 <div id="main-system" class="screen">
     <header class="glass">
         <div id="clock">00:00:00</div>
-        <div class="fancy-title" style="font-size:24px;">Moonlight Shop</div>
+        <div class="fancy-title sys-name-display" style="font-size:24px;">Moonlight Shop</div>
         <div style="display:flex; gap:15px;">
+            <button id="tech-btn" class="btn-secondary" style="display:none; color: #ffbe0b;" onclick="showScreen('tech-system')">Technik</button>
             <button id="mgmt-btn" class="btn-secondary" style="display:none;" onclick="showScreen('mgmt-system')">Management</button>
             <button id="duty-btn" class="btn-primary" onclick="toggleDuty()">Einstempeln</button>
             <button class="btn-danger" onclick="logoutAndClear()">Logout</button>
@@ -170,11 +177,7 @@
             <h4 style="margin-bottom:15px;">Neues Produkt hinzufügen</h4>
             <div style="display:grid; grid-template-columns: 2fr 1.5fr 1fr 1fr 1fr auto; gap:10px;">
                 <input type="text" id="new-p-name" placeholder="Name">
-                <select id="new-p-cat">
-                    <option value="Kleine Snacks">Kleine Snacks</option>
-                    <option value="Kuchen & Süsses">Kuchen & Süsses</option>
-                    <option value="Getränke">Getränke</option>
-                </select>
+                <select id="new-p-cat"></select>
                 <input type="number" step="0.01" id="new-p-ek" placeholder="EK €">
                 <input type="number" step="0.01" id="new-p-vk" placeholder="VK €">
                 <input type="number" id="new-p-stock" placeholder="Bestand">
@@ -222,11 +225,61 @@
     </div>
 </div>
 
+<div id="tech-system" class="screen">
+    <header class="glass">
+        <div class="fancy-title" style="color: #ffbe0b;">Systemtechnik</div>
+        <div>
+            <button class="btn-primary" onclick="saveSystemSettings()">Alles Speichern</button>
+            <button class="btn-secondary" onclick="showScreen('main-system')">Abbrechen</button>
+        </div>
+    </header>
+    <div class="mgmt-content" style="display:grid; grid-template-columns: 1fr 1fr; gap:30px;">
+        <div class="glass" style="padding:25px;">
+            <h3 class="category-title" style="margin-top:0">Branding</h3>
+            <label>System-Name</label>
+            <input type="text" id="tech-name" oninput="updateBrandingPreview()">
+            <label>Login-Beschreibung</label>
+            <input type="text" id="tech-desc" oninput="updateBrandingPreview()">
+            
+            <h3 class="category-title">Farbschema</h3>
+            <div style="display:flex; gap:12px;" id="theme-picks">
+                <div class="color-preview" style="background: linear-gradient(135deg, #a0c4ff, #c49fff)" onclick="updateTheme('galaxy')"></div>
+                <div class="color-preview" style="background: linear-gradient(135deg, #60a5fa, #8b5cf6)" onclick="updateTheme('blue-violet')"></div>
+                <div class="color-preview" style="background: linear-gradient(135deg, #fb923c, #ef4444)" onclick="updateTheme('orange-red')"></div>
+                <div class="color-preview" style="background: #fff" onclick="updateTheme('bw')"></div>
+                <div class="color-preview" style="background: linear-gradient(135deg, #4ade80, #f59e0b)" onclick="updateTheme('green-orange')"></div>
+            </div>
+        </div>
+
+        <div class="glass" style="padding:25px;">
+            <h3 class="category-title" style="margin-top:0">Schriftart</h3>
+            <select id="tech-font" onchange="previewFont(this.value)" style="font-size: 16px;">
+                <option value="Inter" style="font-family: 'Inter';">Inter (Standard)</option>
+                <option value="Roboto Mono" style="font-family: 'Roboto Mono';">Roboto Mono</option>
+                <option value="Montserrat" style="font-family: 'Montserrat';">Montserrat</option>
+                <option value="Bebas Neue" style="font-family: 'Bebas Neue';">Bebas Neue</option>
+                <option value="Oswald" style="font-family: 'Oswald';">Oswald</option>
+                <option value="Playfair Display" style="font-family: 'Playfair Display';">Playfair Display</option>
+                <option value="Pacifico" style="font-family: 'Pacifico';">Pacifico</option>
+                <option value="Lobster" style="font-family: 'Lobster';">Lobster</option>
+                <option value="Caveat" style="font-family: 'Caveat';">Caveat</option>
+                <option value="Dancing Script" style="font-family: 'Dancing Script';">Dancing Script</option>
+            </select>
+
+            <h3 class="category-title">Kategorien Verwalten</h3>
+            <div id="cat-list-tech" style="margin-bottom:15px;"></div>
+            <div style="display:flex; gap:10px;">
+                <input type="text" id="new-cat-input" placeholder="Neue Kategorie..." style="margin:0">
+                <button class="btn-primary" onclick="addCat()">+</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 
 <script>
-    // --- DISCORD WEBHOOK URLS ---
     const WEBHOOK_QUITTUNG = "https://discord.com/api/webhooks/1485574543673397349/U_AvRzZ-F8ZNhuKshD7dZWq7kvXhsng6xfmuvZNJY1fl8voCPfib8oitsUMfAw4eGs35";
     const WEBHOOK_LAGER = "https://discord.com/api/webhooks/1485575026664018000/G6cCLidNsNVC-ZhVQV18XRDikweQmt6nf1JP9IipJayIg8h21EOtB8rmtd7QusAKIjvQ";
 
@@ -241,20 +294,29 @@
     };
     firebase.initializeApp(firebaseConfig);
     const rtdb = firebase.database();
-    
+
     let products = [], employees = [], ranks = [], transactions = [], currentUser = null, cart = {}, onDuty = false, currentShiftKey = null;
-    let currentDiscount = 0, currentTip = 0;
-
-    function addTip() { 
-        const val = parseFloat(document.getElementById('tip-input').value); 
-        if(!isNaN(val) && val > 0) { currentTip = val; document.getElementById('tip-input').value = ""; customNotify("Trinkgeld hinzugefügt"); } 
-        else { currentTip = 0; }
-        renderCart(); 
-    }
-
-    function removeTip() { currentTip = 0; document.getElementById('tip-input').value = ""; customNotify("Trinkgeld entfernt"); renderCart(); }
+    let currentDiscount = 0, currentTip = 0, categories = [], sysSettings = {};
 
     function loadData() {
+        // --- TECHNIK SETTINGS ---
+        rtdb.ref('settings').on('value', s => {
+            sysSettings = s.val() || { name: "Moonlight Shop", desc: "Bitte logge dich ein.", theme: "galaxy", font: "Inter" };
+            applySystemSettings();
+        });
+
+        // --- KATEGORIEN ---
+        rtdb.ref('categories').on('value', s => {
+            const data = s.val();
+            categories = data ? Object.keys(data).map(k => ({id: k, name: data[k]})) : [
+                {id: 'cat1', name: 'Kleine Snacks'},
+                {id: 'cat2', name: 'Kuchen & Süsses'},
+                {id: 'cat3', name: 'Getränke'}
+            ];
+            renderCats();
+            renderProducts();
+        });
+
         rtdb.ref('ranks').on('value', s => {
             const d = s.val();
             ranks = d ? Object.keys(d).map(k => ({ id: k, ...d[k] })) : [];
@@ -287,6 +349,69 @@
         });
     }
 
+    // --- TECHNIK LOGIK ---
+    function applySystemSettings() {
+        document.querySelectorAll('.sys-name-display').forEach(el => el.innerText = sysSettings.name);
+        document.getElementById('login-sys-name').innerText = sysSettings.name;
+        document.getElementById('login-sys-desc').innerText = sysSettings.desc;
+        document.getElementById('page-title').innerText = sysSettings.name;
+        document.getElementById('tech-name').value = sysSettings.name;
+        document.getElementById('tech-desc').value = sysSettings.desc;
+        document.getElementById('tech-font').value = sysSettings.font;
+        previewFont(sysSettings.font);
+        updateTheme(sysSettings.theme, false);
+    }
+
+    function previewFont(font) {
+        document.body.style.fontFamily = `'${font}', sans-serif`;
+        sysSettings.font = font;
+    }
+
+    function updateTheme(theme, isPreview = true) {
+        let accent = "linear-gradient(135deg, #a0c4ff 0%, #c49fff 100%)";
+        if(theme === 'blue-violet') accent = "linear-gradient(135deg, #60a5fa 0%, #8b5cf6 100%)";
+        if(theme === 'orange-red') accent = "linear-gradient(135deg, #fb923c 0%, #ef4444 100%)";
+        if(theme === 'bw') accent = "linear-gradient(135deg, #ffffff 0%, #94a3b8 100%)";
+        if(theme === 'green-orange') accent = "linear-gradient(135deg, #4ade80 0%, #f59e0b 100%)";
+        document.documentElement.style.setProperty('--accent', accent);
+        if(isPreview) sysSettings.theme = theme;
+    }
+
+    function updateBrandingPreview() {
+        const n = document.getElementById('tech-name').value;
+        document.querySelectorAll('.sys-name-display').forEach(el => el.innerText = n);
+    }
+
+    async function saveSystemSettings() {
+        sysSettings.name = document.getElementById('tech-name').value;
+        sysSettings.desc = document.getElementById('tech-desc').value;
+        await rtdb.ref('settings').set(sysSettings);
+        customNotify("Systemeinstellungen gespeichert!");
+    }
+
+    function renderCats() {
+        const list = document.getElementById('cat-list-tech');
+        const select = document.getElementById('new-p-cat');
+        list.innerHTML = categories.map(c => `<div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>${c.name}</span><button class="btn-danger" style="padding:5px 10px;" onclick="delCat('${c.id}')">X</button></div>`).join('');
+        select.innerHTML = categories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+    }
+
+    function addCat() {
+        const val = document.getElementById('new-cat-input').value;
+        if(val) rtdb.ref('categories').push(val);
+        document.getElementById('new-cat-input').value = "";
+    }
+    function delCat(id) { if(confirm("Kategorie löschen?")) rtdb.ref(`categories/${id}`).remove(); }
+
+    // --- STANDARD FUNKTIONEN ---
+    function addTip() { 
+        const val = parseFloat(document.getElementById('tip-input').value);
+        if(!isNaN(val) && val > 0) { currentTip = val; document.getElementById('tip-input').value = ""; customNotify("Trinkgeld hinzugefügt"); } 
+        else { currentTip = 0; }
+        renderCart(); 
+    }
+    function removeTip() { currentTip = 0; document.getElementById('tip-input').value = ""; customNotify("Trinkgeld entfernt"); renderCart(); }
+
     function refreshMgmt() {
         const grid = document.getElementById('emp-grid');
         if(grid) {
@@ -306,23 +431,18 @@
             });
         }
         
-        const tbody = document.getElementById('stock-tbody'); 
+        const tbody = document.getElementById('stock-tbody');
         if(tbody) {
             tbody.innerHTML = "";
             products.forEach(p => {
                 let s = p.stock || 0;
                 let dot = s < 20 ? 'dot-red' : (s < 150 ? 'dot-yellow' : 'dot-green');
+                let catOptions = categories.map(c => `<option value="${c.name}" ${p.category === c.name ? 'selected' : ''}>${c.name}</option>`).join('');
                 tbody.innerHTML += `
                 <tr>
                     <td style="width:40px"><span class="dot ${dot}"></span></td>
                     <td><input type="text" value="${p.name || ''}" class="glass" style="margin:0" onchange="updateP('${p.id}','name',this.value)"></td>
-                    <td>
-                        <select class="glass" style="margin:0" onchange="updateP('${p.id}','category',this.value)">
-                            <option value="Kleine Snacks" ${p.category === 'Kleine Snacks' ? 'selected' : ''}>Kleine Snacks</option>
-                            <option value="Kuchen & Süsses" ${p.category === 'Kuchen & Süsses' ? 'selected' : ''}>Kuchen & Süsses</option>
-                            <option value="Getränke" ${p.category === 'Getränke' ? 'selected' : ''}>Getränke</option>
-                        </select>
-                    </td>
+                    <td><select class="glass" style="margin:0" onchange="updateP('${p.id}','category',this.value)">${catOptions}</select></td>
                     <td style="width:100px"><input type="number" step="0.01" value="${p.ek || 0}" class="glass" style="margin:0" onchange="updateP('${p.id}','ek',parseFloat(this.value))"></td>
                     <td style="width:100px"><input type="number" step="0.01" value="${p.price || 0}" class="glass" style="margin:0" onchange="updateP('${p.id}','price',parseFloat(this.value))"></td>
                     <td style="width:100px"><input type="number" value="${p.stock || 0}" class="glass" style="margin:0" onchange="updateP('${p.id}','stock',parseInt(this.value))"></td>
@@ -337,87 +457,32 @@
         tbody.innerHTML = "";
         transactions.forEach(t => {
             const date = new Date(t.timestamp).toLocaleString('de-DE', {hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit'});
-            tbody.innerHTML += `
-            <tr onclick="showTransactionDetail('${t.id}')">
-                <td>${date}</td>
-                <td><strong>${t.user}</strong></td>
-                <td style="text-align:right; color:var(--success); font-weight:bold;">${t.total.toFixed(2)} €</td>
-            </tr>`;
+            tbody.innerHTML += `<tr onclick="showTransactionDetail('${t.id}')"><td>${date}</td><td><strong>${t.user}</strong></td><td style="text-align:right; color:var(--success); font-weight:bold;">${t.total.toFixed(2)} €</td></tr>`;
         });
     }
 
     function showTransactionDetail(id) {
         const t = transactions.find(x => x.id === id);
-        let itemsHtml = t.items.map(i => `
-            <div style="display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.05);">
-                <span>${i.qty}x ${i.name}</span>
-                <span>${(i.qty * i.price).toFixed(2)}€</span>
-            </div>
-        `).join('');
-
-        document.getElementById('modal-body').innerHTML = `
-            <h2 style="font-family:var(--font-fancy); color:var(--accent); margin-bottom:20px;">Details Beleg</h2>
-            <div style="font-size:13px; opacity:0.7; margin-bottom:20px;">
-                Zeit: ${new Date(t.timestamp).toLocaleString()}<br>
-                Verkäufer: ${t.user}
-            </div>
-            <div style="margin-bottom:20px;">${itemsHtml}</div>
-            ${t.tip > 0 ? `<div style="display:flex; justify-content:space-between; color:var(--success); font-weight:bold;"><span>Trinkgeld:</span><span>${t.tip.toFixed(2)}€</span></div>` : ''}
-            <div style="display:flex; justify-content:space-between; font-size:20px; border-top:1px solid #fff; margin-top:10px; padding-top:10px; font-weight:bold;">
-                <span>GESAMT:</span><span>${t.total.toFixed(2)}€</span>
-            </div>
-            <button class="btn-secondary" style="width:100%; margin-top:30px;" onclick="closeModal()">Schließen</button>
-        `;
+        let itemsHtml = t.items.map(i => `<div style="display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.05);"><span>${i.qty}x ${i.name}</span><span>${(i.qty * i.price).toFixed(2)}€</span></div>`).join('');
+        document.getElementById('modal-body').innerHTML = `<h2 style="font-family:var(--font-fancy); color:var(--accent); margin-bottom:20px;">Details Beleg</h2><div style="font-size:13px; opacity:0.7; margin-bottom:20px;">Zeit: ${new Date(t.timestamp).toLocaleString()}<br>Verkäufer: ${t.user}</div><div style="margin-bottom:20px;">${itemsHtml}</div>${t.tip > 0 ? `<div style="display:flex; justify-content:space-between; color:var(--success); font-weight:bold;"><span>Trinkgeld:</span><span>${t.tip.toFixed(2)}€</span></div>` : ''}<div style="display:flex; justify-content:space-between; font-size:20px; border-top:1px solid #fff; margin-top:10px; padding-top:10px; font-weight:bold;"><span>GESAMT:</span><span>${t.total.toFixed(2)}€</span></div><button class="btn-secondary" style="width:100%; margin-top:30px;" onclick="closeModal()">Schließen</button>`;
         document.getElementById('modal-overlay').style.display = 'flex';
     }
 
-    // --- WEBHOOK LOGIK ---
     async function sendToDiscord(receipt) {
         const itemsString = receipt.items.map(i => `- ${i.qty}x ${i.name} (${(i.qty * i.price).toFixed(2)}€)`).join("\n");
-        const embed = {
-            title: "🌙 Neue Quittung - Moonlight Shop",
-            color: 0xa0c4ff,
-            fields: [
-                { name: "Verkäufer", value: receipt.user, inline: true },
-                { name: "Summe", value: `**${receipt.total.toFixed(2)}€**`, inline: true },
-                { name: "Trinkgeld", value: `${receipt.tip.toFixed(2)}€`, inline: true },
-                { name: "Produkte", value: itemsString || "Keine Artikel" }
-            ],
-            footer: { text: "System Zeit: " + new Date().toLocaleString() }
-        };
-        try {
-            await fetch(WEBHOOK_QUITTUNG, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ embeds: [embed] })
-            });
-        } catch (e) { console.error("Webhook Error:", e); }
+        const embed = { title: "🌙 Neue Quittung - Moonlight Shop", color: 0xa0c4ff, fields: [{ name: "Verkäufer", value: receipt.user, inline: true }, { name: "Summe", value: `**${receipt.total.toFixed(2)}€**`, inline: true }, { name: "Trinkgeld", value: `${receipt.tip.toFixed(2)}€`, inline: true }, { name: "Produkte", value: itemsString || "Keine Artikel" }], footer: { text: "System Zeit: " + new Date().toLocaleString() } };
+        try { await fetch(WEBHOOK_QUITTUNG, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ embeds: [embed] }) }); } catch (e) { console.error("Webhook Error:", e); }
     }
 
     async function sendStockWarning(pName, newStock) {
-        const embed = {
-            title: "⚠️ LAGERWARNUNG - Moonlight Shop",
-            color: 0xff6b6b,
-            description: `Der Bestand von **${pName}** ist kritisch niedrig!`,
-            fields: [
-                { name: "Aktueller Bestand", value: `**${newStock}** Stück`, inline: true }
-            ],
-            footer: { text: "Bitte Lager prüfen und nachfüllen!" }
-        };
-        try {
-            await fetch(WEBHOOK_LAGER, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ embeds: [embed] })
-            });
-        } catch (e) { console.error("Stock Webhook Error:", e); }
+        const embed = { title: "⚠️ LAGERWARNUNG - Moonlight Shop", color: 0xff6b6b, description: `Der Bestand von **${pName}** ist kritisch niedrig!`, fields: [{ name: "Aktueller Bestand", value: `**${newStock}** Stück`, inline: true }], footer: { text: "Bitte Lager prüfen und nachfüllen!" } };
+        try { await fetch(WEBHOOK_LAGER, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ embeds: [embed] }) }); } catch (e) { console.error("Stock Webhook Error:", e); }
     }
 
     async function submitReceipt() {
         if(!onDuty) return customNotify("Nicht eingestempelt!");
         const totalBrutto = parseFloat(document.getElementById('total-price').innerText);
         if (totalBrutto <= 0) return customNotify("Warenkorb leer!");
-
         let totalNetto = currentTip;
         let cartItems = [];
         for(let id in cart) {
@@ -425,36 +490,13 @@
             let newStock = (p.stock || 0) - cart[id].qty;
             totalNetto += cart[id].qty * (p.price * (1 - (currentDiscount / 100)) - (p.ek || 0));
             cartItems.push({ name: cart[id].name, qty: cart[id].qty, price: cart[id].price });
-            
-            // Stock Update in Firebase
             rtdb.ref('products/'+id).update({ stock: newStock });
-            
-            // Stock Warning Check (unter 20 Stück)
-            if(newStock < 20) {
-                sendStockWarning(p.name, newStock);
-            }
+            if(newStock < 20) { sendStockWarning(p.name, newStock); }
         }
-        
-        const newReceipt = {
-            user: currentUser.u,
-            timestamp: Date.now(),
-            items: cartItems,
-            total: totalBrutto,
-            tip: currentTip
-        };
-
+        const newReceipt = { user: currentUser.u, timestamp: Date.now(), items: cartItems, total: totalBrutto, tip: currentTip };
         rtdb.ref('transactions').push(newReceipt);
-        rtdb.ref('totals').transaction(t => { 
-            if(t) { 
-                t.day += totalBrutto; t.week += totalBrutto; t.month += totalBrutto; 
-                t.dayNet += totalNetto; t.weekNet += totalNetto; t.monthNet += totalNetto; 
-            } 
-            return t; 
-        });
-
-        // Quittung senden
+        rtdb.ref('totals').transaction(t => { if(t) { t.day += totalBrutto; t.week += totalBrutto; t.month += totalBrutto; t.dayNet += totalNetto; t.weekNet += totalNetto; t.monthNet += totalNetto; } return t; });
         sendToDiscord(newReceipt);
-        
         cart = {}; currentDiscount = 0; currentTip = 0; 
         renderCart(); renderProducts(); 
         customNotify("Kauf abgeschlossen & Webhooks gesendet!");
@@ -476,8 +518,7 @@
 
     function openEmpModal(id) {
         const e = employees.find(x => x.id === id);
-        let shiftsHtml = "";
-        let totalHrs = 0;
+        let shiftsHtml = ""; let totalHrs = 0;
         let rankOptions = ranks.map(r => `<option value="${r.id}" ${e.role === r.id ? 'selected' : ''}>${r.name}</option>`).join('');
         if(e.shifts) {
             Object.values(e.shifts).reverse().slice(0,10).forEach(s => {
@@ -486,24 +527,7 @@
                 shiftsHtml += `<tr><td><div class="shift-box">${fmtTime(s.start)}</div></td><td><div class="shift-box">${s.end ? fmtTime(s.end) : '--:--'}</div></td><td style="text-align:right; font-weight:bold;">${saldo > 0 ? saldo.toFixed(2) : '0.00'}</td></tr>`;
             });
         }
-        document.getElementById('modal-body').innerHTML = `
-            <h2 style="margin-bottom:20px; font-family:var(--font-fancy); color:#a0c4ff;">Profil: ${e.u}</h2>
-            <label>Name</label><input type="text" id="edit-u" value="${e.u}">
-            <label>Passwort</label><input type="text" id="edit-p" value="${e.p}">
-            <label>Rang</label><select id="edit-r">${rankOptions}</select>
-            <button class="btn-primary" style="width:100%" onclick="saveEmp('${id}')">Daten Speichern</button>
-            <div style="margin-top:30px;">
-                <table class="shift-table">
-                    <thead><tr><th>Kommen</th><th>Gehen</th><th style="text-align:right">Saldo</th></tr></thead>
-                    <tbody>${shiftsHtml || '<tr><td colspan="3" style="opacity:0.5; padding:20px; text-align:center;">Keine Schichten</td></tr>'}</tbody>
-                </table>
-                <div style="display:flex; justify-content:space-between; margin-top:20px; border-top:1px solid #fff; padding-top:10px; font-weight:bold;">
-                    <span>Total Stunden</span><span>${totalHrs.toFixed(2)}</span>
-                </div>
-            </div>
-            <button class="btn-danger" style="width:100%; margin-top:30px;" onclick="deleteEmp('${id}')">Mitarbeiter Löschen</button>
-            <button class="btn-secondary" style="width:100%; margin-top:10px;" onclick="closeModal()">Schließen</button>
-        `;
+        document.getElementById('modal-body').innerHTML = `<h2 style="margin-bottom:20px; font-family:var(--font-fancy); color:#a0c4ff;">Profil: ${e.u}</h2><label>Name</label><input type="text" id="edit-u" value="${e.u}"><label>Passwort</label><input type="text" id="edit-p" value="${e.p}"><label>Rang</label><select id="edit-r">${rankOptions}</select><button class="btn-primary" style="width:100%" onclick="saveEmp('${id}')">Daten Speichern</button><div style="margin-top:30px;"><table class="shift-table"><thead><tr><th>Kommen</th><th>Gehen</th><th style="text-align:right">Saldo</th></tr></thead><tbody>${shiftsHtml || '<tr><td colspan="3" style="opacity:0.5; padding:20px; text-align:center;">Keine Schichten</td></tr>'}</tbody></table><div style="display:flex; justify-content:space-between; margin-top:20px; border-top:1px solid #fff; padding-top:10px; font-weight:bold;"><span>Total Stunden</span><span>${totalHrs.toFixed(2)}</span></div></div><button class="btn-danger" style="width:100%; margin-top:30px;" onclick="deleteEmp('${id}')">Mitarbeiter Löschen</button><button class="btn-secondary" style="width:100%; margin-top:10px;" onclick="closeModal()">Schließen</button>`;
         document.getElementById('modal-overlay').style.display = 'flex';
     }
 
@@ -514,12 +538,7 @@
         const sel = document.getElementById('new-r');
         const cont = document.getElementById('ranks-list-container');
         if(sel) sel.innerHTML = ranks.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
-        if(cont) { cont.innerHTML = ranks.map(r => `
-            <div style="display:flex; align-items:center; gap:15px; padding:10px; background:rgba(255,255,255,0.03); border-radius:10px; margin-bottom:5px;">
-                <input type="text" value="${r.name}" class="glass" id="edit-rank-name-${r.id}" style="flex:2; margin:0;">
-                <label style="display:flex; align-items:center; gap:5px; font-size:12px;"><input type="checkbox" id="edit-rank-mgmt-${r.id}" ${r.mgmt ? 'checked' : ''}> Mgmt.</label>
-                <button class="btn-danger" style="padding:5px 10px" onclick="deleteRank('${r.id}')">X</button>
-            </div>`).join(''); }
+        if(cont) { cont.innerHTML = ranks.map(r => `<div style="display:flex; align-items:center; gap:15px; padding:10px; background:rgba(255,255,255,0.03); border-radius:10px; margin-bottom:5px;"><input type="text" value="${r.name}" class="glass" id="edit-rank-name-${r.id}" style="flex:2; margin:0;"><label style="display:flex; align-items:center; gap:5px; font-size:12px;"><input type="checkbox" id="edit-rank-mgmt-${r.id}" ${r.mgmt ? 'checked' : ''}> Mgmt.</label><button class="btn-danger" style="padding:5px 10px" onclick="deleteRank('${r.id}')">X</button></div>`).join(''); }
     }
     function saveAllRanks() { ranks.forEach(r => { const nameValue = document.getElementById(`edit-rank-name-${r.id}`).value; const mgmtValue = document.getElementById(`edit-rank-mgmt-${r.id}`).checked; rtdb.ref('ranks/'+r.id).update({ name: nameValue, mgmt: mgmtValue }); }); customNotify("Alle Ränge gespeichert"); }
     function addRank() { rtdb.ref('ranks').push({ name: document.getElementById('new-rank-name').value, mgmt: document.getElementById('new-rank-mgmt').checked }); }
@@ -530,13 +549,26 @@
 
     function handleLogin() {
         const u = document.getElementById('username').value, p = document.getElementById('password').value;
-        if(u === "OM_MA") { currentUser = {id:"admin", u:"Admin"}; document.getElementById('mgmt-btn').style.display="block"; showScreen('main-system'); return; }
+        if(u === "OM_MA") { 
+            currentUser = {id:"admin", u:"OM_MA"}; 
+            document.getElementById('mgmt-btn').style.display="block"; 
+            document.getElementById('tech-btn').style.display="block"; 
+            showScreen('main-system'); 
+            return;
+        }
         const user = employees.find(x => x.u === u && x.p === p);
-        if(user) { currentUser = user; const r = ranks.find(x => x.id === user.role); document.getElementById('mgmt-btn').style.display = (r && r.mgmt) ? "block" : "none"; showScreen('main-system'); }
+        if(user) { 
+            currentUser = user; 
+            const r = ranks.find(x => x.id === user.role); 
+            document.getElementById('mgmt-btn').style.display = (r && r.mgmt) ? "block" : "none"; 
+            document.getElementById('tech-btn').style.display = "none";
+            showScreen('main-system'); 
+        } else { customNotify("Falsche Login-Daten!"); }
     }
     function logoutAndClear() { if(onDuty && currentUser && currentShiftKey) rtdb.ref(`employees/${currentUser.id}/shifts/${currentShiftKey}`).update({ end: Date.now() }); location.reload(); }
     function toggleDuty() {
-        onDuty = !onDuty; const b = document.getElementById('duty-btn');
+        onDuty = !onDuty;
+        const b = document.getElementById('duty-btn');
         if(onDuty) { currentShiftKey = rtdb.ref(`employees/${currentUser.id}/shifts`).push({ start: Date.now() }).key; b.innerText = "Ausstempeln"; b.className = "btn-danger"; customNotify("Eingestempelt!"); } 
         else { rtdb.ref(`employees/${currentUser.id}/shifts/${currentShiftKey}`).update({ end: Date.now() }); b.innerText = "Einstempeln"; b.className = "btn-primary"; customNotify("Ausgestempelt!"); currentShiftKey = null; }
     }
@@ -544,11 +576,12 @@
     function customNotify(m) { const n = document.createElement('div'); n.className="notify"; n.innerText=m; document.getElementById('notify-container').appendChild(n); setTimeout(()=>n.remove(), 3000); }
 
     function renderProducts() {
-        const c = document.getElementById('product-list-container'); c.innerHTML = "";
-        ["Kleine Snacks", "Kuchen & Süsses", "Getränke"].forEach(cat => {
-            const ps = products.filter(p => p.category === cat);
+        const c = document.getElementById('product-list-container');
+        c.innerHTML = "";
+        categories.forEach(cat => {
+            const ps = products.filter(p => p.category === cat.name);
             if(ps.length) {
-                c.innerHTML += `<div class="category-title">${cat}</div>`;
+                c.innerHTML += `<div class="category-title">${cat.name}</div>`;
                 let g = `<div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap:20px;">`;
                 ps.forEach(p => { g += `<div class="glass" style="padding:20px; text-align:center;"><strong>${p.name}</strong><br>${p.price.toFixed(2)}€<div style="display:flex; justify-content:center; gap:10px; margin-top:10px;"><button class="btn-secondary" onclick="updateQty('${p.id}',-1)">-</button><span>${cart[p.id]?.qty || 0}</span><button class="btn-secondary" onclick="updateQty('${p.id}',1)">+</button></div></div>`; });
                 c.innerHTML += g + `</div>`;
@@ -558,7 +591,8 @@
     function updateQty(id, d) { let n = (cart[id]?.qty || 0) + d; if(n > 0) cart[id] = { name: products.find(x => x.id === id).name, qty: n, price: products.find(x => x.id === id).price }; else delete cart[id]; renderCart(); renderProducts(); }
     function applyDiscount(p) { currentDiscount = p; renderCart(); }
     function renderCart() {
-        let l = document.getElementById('cart-list'), baseSum = 0; l.innerHTML = "";
+        let l = document.getElementById('cart-list'), baseSum = 0;
+        l.innerHTML = "";
         for(let id in cart) { baseSum += cart[id].qty * cart[id].price; l.innerHTML += `<div>${cart[id].qty}x ${cart[id].name}</div>`; }
         if(currentTip > 0) l.innerHTML += `<div style="color:var(--success)">+ Trinkgeld: ${currentTip.toFixed(2)}€</div>`;
         let finalSum = (baseSum * (1 - (currentDiscount / 100))) + currentTip;
@@ -567,9 +601,9 @@
 
     setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleTimeString(); }, 1000);
     window.onload = loadData;
-
     const canvas = document.getElementById('bg-canvas'), ctx = canvas.getContext('2d');
-    let w, h, pts = []; window.onresize = () => { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }; window.onresize();
+    let w, h, pts = [];
+    window.onresize = () => { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }; window.onresize();
     class Part { constructor() { this.x = Math.random()*w; this.y = Math.random()*h; this.vx = Math.random()*0.4-0.2; this.vy = Math.random()*0.4-0.2; } draw() { this.x += this.vx; this.y += this.vy; ctx.fillStyle = "rgba(255,255,255,0.3)"; ctx.beginPath(); ctx.arc(this.x,this.y,1,0,Math.PI*2); ctx.fill(); } }
     for(let i=0; i<100; i++) pts.push(new Part()); function anim() { ctx.clearRect(0,0,w,h); pts.forEach(x => x.draw()); requestAnimationFrame(anim); } anim();
 </script>
