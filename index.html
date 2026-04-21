@@ -52,7 +52,13 @@
         .stat-label-net { color: #a0c4ff; font-weight: bold; margin-bottom: 15px; display: block; text-transform: uppercase; letter-spacing: 2px; margin-top: 30px; }
 
         .stock-table { width: 100%; border-collapse: separate; border-spacing: 0 10px; }
-        .stock-table td { padding: 15px; background: rgba(255,255,255,0.03); border-top: 1px solid var(--glass-border); border-bottom: 1px solid var(--glass-border); }
+        .stock-table th { text-align: left; padding: 10px; font-size: 12px; text-transform: uppercase; opacity: 0.7; }
+        .stock-table td { padding: 10px; background: rgba(255,255,255,0.03); border-top: 1px solid var(--glass-border); border-bottom: 1px solid var(--glass-border); }
+
+        .log-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .log-table tr { cursor: pointer; border-bottom: 1px solid var(--glass-border); transition: 0.2s; }
+        .log-table tr:hover { background: rgba(255,255,255,0.05); }
+        .log-table td { padding: 12px; font-size: 13px; }
 
         .dot { height: 12px; width: 12px; border-radius: 50%; display: inline-block; }
         .dot-green { background-color: var(--success); box-shadow: 0 0 10px var(--success); }
@@ -69,8 +75,6 @@
         #notify-container { position: fixed; top: 20px; right: 20px; z-index: 9999; }
         .notify { padding: 15px 25px; border-radius: 12px; background: #0a0a1a; border: 1px solid var(--success); color: white; margin-bottom: 10px; }
         
-        .rank-item { display: flex; align-items: center; gap: 15px; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 10px; margin-bottom: 5px; }
-
         .shift-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         .shift-table th { text-align: left; font-size: 12px; opacity: 0.7; padding-bottom: 8px; }
         .shift-table td { padding: 5px 0; }
@@ -154,12 +158,55 @@
             <div class="stat-box glass"><small>MONAT NETTO</small><div class="stat-val" id="stat-month-net">0.00 €</div></div>
         </div>
 
-        <h3 class="category-title">Lagerbestand</h3>
+        <h3 class="category-title">Letzte 50 Transaktionen</h3>
+        <div class="glass" style="padding:10px; margin-bottom:40px; max-height:400px; overflow-y:auto;">
+            <table class="log-table">
+                <tbody id="log-tbody"></tbody>
+            </table>
+        </div>
+
+        <h3 class="category-title">Lagerverwaltung</h3>
+        <div class="glass" style="padding:20px; margin-bottom:20px;">
+            <h4 style="margin-bottom:15px;">Neues Produkt hinzufügen</h4>
+            <div style="display:grid; grid-template-columns: 2fr 1.5fr 1fr 1fr 1fr auto; gap:10px;">
+                <input type="text" id="new-p-name" placeholder="Name">
+                <select id="new-p-cat">
+                    <option value="Kleine Snacks">Kleine Snacks</option>
+                    <option value="Kuchen & Süsses">Kuchen & Süsses</option>
+                    <option value="Getränke">Getränke</option>
+                </select>
+                <input type="number" step="0.01" id="new-p-ek" placeholder="EK €">
+                <input type="number" step="0.01" id="new-p-vk" placeholder="VK €">
+                <input type="number" id="new-p-stock" placeholder="Bestand">
+                <button class="btn-primary" onclick="addProduct()">Hinzufügen</button>
+            </div>
+        </div>
+
         <table class="stock-table" style="width:100%">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>Name</th>
+                    <th>Kategorie</th>
+                    <th>EK (€)</th>
+                    <th>VK (€)</th>
+                    <th>Bestand</th>
+                    <th></th>
+                </tr>
+            </thead>
             <tbody id="stock-tbody"></tbody>
         </table>
 
-        <h3 class="category-title">Mitarbeiter & Status</h3>
+        <h3 class="category-title">Mitarbeiter & Logins</h3>
+        <div class="glass" style="padding:20px; margin-bottom:20px;">
+            <h4 style="margin-bottom:15px;">Neuen Personal-Login erstellen</h4>
+            <div style="display:grid; grid-template-columns: 1fr 1fr 1fr auto; gap:10px;">
+                <input type="text" id="new-u" placeholder="Login Name">
+                <input type="password" id="new-p" placeholder="Passwort">
+                <select id="new-r"></select>
+                <button class="btn-primary" onclick="createEmployee()">Hinzufügen</button>
+            </div>
+        </div>
         <div id="emp-grid" class="mgmt-card-grid"></div>
 
         <h3 class="category-title">Ränge verwalten</h3>
@@ -172,16 +219,6 @@
             <div id="ranks-list-container"></div>
             <button class="btn-primary" style="width:100%; margin-top:20px; height:50px;" onclick="saveAllRanks()">Ränge Speichern</button>
         </div>
-        
-        <div class="glass" style="padding:20px;">
-            <h4 style="margin-bottom:15px;">Neuen Personal-Login erstellen</h4>
-            <div style="display:grid; grid-template-columns: 1fr 1fr 1fr auto; gap:10px;">
-                <input type="text" id="new-u" placeholder="Login Name">
-                <input type="password" id="new-p" placeholder="Passwort">
-                <select id="new-r"></select>
-                <button class="btn-primary" onclick="createEmployee()">Hinzufügen</button>
-            </div>
-        </div>
     </div>
 </div>
 
@@ -189,6 +226,10 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 
 <script>
+    // --- DISCORD WEBHOOK URLS ---
+    const WEBHOOK_QUITTUNG = "https://discord.com/api/webhooks/1485574543673397349/U_AvRzZ-F8ZNhuKshD7dZWq7kvXhsng6xfmuvZNJY1fl8voCPfib8oitsUMfAw4eGs35";
+    const WEBHOOK_LAGER = "https://discord.com/api/webhooks/1485575026664018000/G6cCLidNsNVC-ZhVQV18XRDikweQmt6nf1JP9IipJayIg8h21EOtB8rmtd7QusAKIjvQ";
+
     const firebaseConfig = {
         apiKey: "1:25359833042:web:349a45f94b9439f61e9a0b",
         authDomain: "moonlight-cafe-html.firebaseapp.com",
@@ -201,28 +242,17 @@
     firebase.initializeApp(firebaseConfig);
     const rtdb = firebase.database();
     
-    let products = [], employees = [], ranks = [], currentUser = null, cart = {}, onDuty = false, currentShiftKey = null;
+    let products = [], employees = [], ranks = [], transactions = [], currentUser = null, cart = {}, onDuty = false, currentShiftKey = null;
     let currentDiscount = 0, currentTip = 0;
 
-    // TRINKGELD LOGIK
     function addTip() { 
         const val = parseFloat(document.getElementById('tip-input').value); 
-        if(!isNaN(val) && val > 0) { 
-            currentTip = val; 
-            document.getElementById('tip-input').value = ""; 
-            customNotify("Trinkgeld hinzugefügt");
-        } else {
-            currentTip = 0; // Setzt auf 0 wenn Feld leer/0
-        }
+        if(!isNaN(val) && val > 0) { currentTip = val; document.getElementById('tip-input').value = ""; customNotify("Trinkgeld hinzugefügt"); } 
+        else { currentTip = 0; }
         renderCart(); 
     }
 
-    function removeTip() {
-        currentTip = 0;
-        document.getElementById('tip-input').value = "";
-        customNotify("Trinkgeld entfernt");
-        renderCart();
-    }
+    function removeTip() { currentTip = 0; document.getElementById('tip-input').value = ""; customNotify("Trinkgeld entfernt"); renderCart(); }
 
     function loadData() {
         rtdb.ref('ranks').on('value', s => {
@@ -240,6 +270,11 @@
             products = d ? Object.keys(d).map(k => ({ id: k, ...d[k] })) : [];
             renderProducts(); 
             refreshMgmt();
+        });
+        rtdb.ref('transactions').limitToLast(50).on('value', s => {
+            const d = s.val();
+            transactions = d ? Object.keys(d).map(k => ({ id: k, ...d[k] })).reverse() : [];
+            renderTransactionLogs();
         });
         rtdb.ref('totals').on('value', s => {
             const t = s.val() || { day: 0, week: 0, month: 0, dayNet: 0, weekNet: 0, monthNet: 0 };
@@ -270,40 +305,187 @@
                 </div>`;
             });
         }
+        
         const tbody = document.getElementById('stock-tbody'); 
         if(tbody) {
             tbody.innerHTML = "";
             products.forEach(p => {
                 let s = p.stock || 0;
                 let dot = s < 20 ? 'dot-red' : (s < 150 ? 'dot-yellow' : 'dot-green');
-                tbody.innerHTML += `<tr><td style="width:40px"><span class="dot ${dot}"></span></td><td><input type="text" value="${p.name}" class="glass" style="margin:0" onchange="updateP('${p.id}','name',this.value)"></td><td style="width:100px"><input type="number" value="${p.stock||0}" class="glass" style="margin:0" onchange="updateP('${p.id}','stock',parseInt(this.value))"></td><td style="width:50px"><button class="btn-danger" onclick="deleteP('${p.id}')">X</button></td></tr>`;
+                tbody.innerHTML += `
+                <tr>
+                    <td style="width:40px"><span class="dot ${dot}"></span></td>
+                    <td><input type="text" value="${p.name || ''}" class="glass" style="margin:0" onchange="updateP('${p.id}','name',this.value)"></td>
+                    <td>
+                        <select class="glass" style="margin:0" onchange="updateP('${p.id}','category',this.value)">
+                            <option value="Kleine Snacks" ${p.category === 'Kleine Snacks' ? 'selected' : ''}>Kleine Snacks</option>
+                            <option value="Kuchen & Süsses" ${p.category === 'Kuchen & Süsses' ? 'selected' : ''}>Kuchen & Süsses</option>
+                            <option value="Getränke" ${p.category === 'Getränke' ? 'selected' : ''}>Getränke</option>
+                        </select>
+                    </td>
+                    <td style="width:100px"><input type="number" step="0.01" value="${p.ek || 0}" class="glass" style="margin:0" onchange="updateP('${p.id}','ek',parseFloat(this.value))"></td>
+                    <td style="width:100px"><input type="number" step="0.01" value="${p.price || 0}" class="glass" style="margin:0" onchange="updateP('${p.id}','price',parseFloat(this.value))"></td>
+                    <td style="width:100px"><input type="number" value="${p.stock || 0}" class="glass" style="margin:0" onchange="updateP('${p.id}','stock',parseInt(this.value))"></td>
+                    <td style="width:50px"><button class="btn-danger" onclick="deleteP('${p.id}')">X</button></td>
+                </tr>`;
             });
         }
     }
 
-    function fmtTime(ts) {
-        if(!ts) return "hh:mm";
-        const d = new Date(ts);
-        return d.getHours().toString().padStart(2, '0') + ":" + d.getMinutes().toString().padStart(2, '0');
+    function renderTransactionLogs() {
+        const tbody = document.getElementById('log-tbody');
+        tbody.innerHTML = "";
+        transactions.forEach(t => {
+            const date = new Date(t.timestamp).toLocaleString('de-DE', {hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit'});
+            tbody.innerHTML += `
+            <tr onclick="showTransactionDetail('${t.id}')">
+                <td>${date}</td>
+                <td><strong>${t.user}</strong></td>
+                <td style="text-align:right; color:var(--success); font-weight:bold;">${t.total.toFixed(2)} €</td>
+            </tr>`;
+        });
     }
+
+    function showTransactionDetail(id) {
+        const t = transactions.find(x => x.id === id);
+        let itemsHtml = t.items.map(i => `
+            <div style="display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.05);">
+                <span>${i.qty}x ${i.name}</span>
+                <span>${(i.qty * i.price).toFixed(2)}€</span>
+            </div>
+        `).join('');
+
+        document.getElementById('modal-body').innerHTML = `
+            <h2 style="font-family:var(--font-fancy); color:var(--accent); margin-bottom:20px;">Details Beleg</h2>
+            <div style="font-size:13px; opacity:0.7; margin-bottom:20px;">
+                Zeit: ${new Date(t.timestamp).toLocaleString()}<br>
+                Verkäufer: ${t.user}
+            </div>
+            <div style="margin-bottom:20px;">${itemsHtml}</div>
+            ${t.tip > 0 ? `<div style="display:flex; justify-content:space-between; color:var(--success); font-weight:bold;"><span>Trinkgeld:</span><span>${t.tip.toFixed(2)}€</span></div>` : ''}
+            <div style="display:flex; justify-content:space-between; font-size:20px; border-top:1px solid #fff; margin-top:10px; padding-top:10px; font-weight:bold;">
+                <span>GESAMT:</span><span>${t.total.toFixed(2)}€</span>
+            </div>
+            <button class="btn-secondary" style="width:100%; margin-top:30px;" onclick="closeModal()">Schließen</button>
+        `;
+        document.getElementById('modal-overlay').style.display = 'flex';
+    }
+
+    // --- WEBHOOK LOGIK ---
+    async function sendToDiscord(receipt) {
+        const itemsString = receipt.items.map(i => `- ${i.qty}x ${i.name} (${(i.qty * i.price).toFixed(2)}€)`).join("\n");
+        const embed = {
+            title: "🌙 Neue Quittung - Moonlight Shop",
+            color: 0xa0c4ff,
+            fields: [
+                { name: "Verkäufer", value: receipt.user, inline: true },
+                { name: "Summe", value: `**${receipt.total.toFixed(2)}€**`, inline: true },
+                { name: "Trinkgeld", value: `${receipt.tip.toFixed(2)}€`, inline: true },
+                { name: "Produkte", value: itemsString || "Keine Artikel" }
+            ],
+            footer: { text: "System Zeit: " + new Date().toLocaleString() }
+        };
+        try {
+            await fetch(WEBHOOK_QUITTUNG, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ embeds: [embed] })
+            });
+        } catch (e) { console.error("Webhook Error:", e); }
+    }
+
+    async function sendStockWarning(pName, newStock) {
+        const embed = {
+            title: "⚠️ LAGERWARNUNG - Moonlight Shop",
+            color: 0xff6b6b,
+            description: `Der Bestand von **${pName}** ist kritisch niedrig!`,
+            fields: [
+                { name: "Aktueller Bestand", value: `**${newStock}** Stück`, inline: true }
+            ],
+            footer: { text: "Bitte Lager prüfen und nachfüllen!" }
+        };
+        try {
+            await fetch(WEBHOOK_LAGER, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ embeds: [embed] })
+            });
+        } catch (e) { console.error("Stock Webhook Error:", e); }
+    }
+
+    async function submitReceipt() {
+        if(!onDuty) return customNotify("Nicht eingestempelt!");
+        const totalBrutto = parseFloat(document.getElementById('total-price').innerText);
+        if (totalBrutto <= 0) return customNotify("Warenkorb leer!");
+
+        let totalNetto = currentTip;
+        let cartItems = [];
+        for(let id in cart) {
+            let p = products.find(x => x.id === id);
+            let newStock = (p.stock || 0) - cart[id].qty;
+            totalNetto += cart[id].qty * (p.price * (1 - (currentDiscount / 100)) - (p.ek || 0));
+            cartItems.push({ name: cart[id].name, qty: cart[id].qty, price: cart[id].price });
+            
+            // Stock Update in Firebase
+            rtdb.ref('products/'+id).update({ stock: newStock });
+            
+            // Stock Warning Check (unter 20 Stück)
+            if(newStock < 20) {
+                sendStockWarning(p.name, newStock);
+            }
+        }
+        
+        const newReceipt = {
+            user: currentUser.u,
+            timestamp: Date.now(),
+            items: cartItems,
+            total: totalBrutto,
+            tip: currentTip
+        };
+
+        rtdb.ref('transactions').push(newReceipt);
+        rtdb.ref('totals').transaction(t => { 
+            if(t) { 
+                t.day += totalBrutto; t.week += totalBrutto; t.month += totalBrutto; 
+                t.dayNet += totalNetto; t.weekNet += totalNetto; t.monthNet += totalNetto; 
+            } 
+            return t; 
+        });
+
+        // Quittung senden
+        sendToDiscord(newReceipt);
+        
+        cart = {}; currentDiscount = 0; currentTip = 0; 
+        renderCart(); renderProducts(); 
+        customNotify("Kauf abgeschlossen & Webhooks gesendet!");
+    }
+
+    function addProduct() {
+        const name = document.getElementById('new-p-name').value;
+        const cat = document.getElementById('new-p-cat').value;
+        const ek = parseFloat(document.getElementById('new-p-ek').value) || 0;
+        const vk = parseFloat(document.getElementById('new-p-vk').value) || 0;
+        const stock = parseInt(document.getElementById('new-p-stock').value) || 0;
+        if(!name) return customNotify("Name fehlt!");
+        rtdb.ref('products').push({ name, category: cat, ek, price: vk, stock });
+        customNotify("Produkt hinzugefügt!");
+        document.getElementById('new-p-name').value = ""; document.getElementById('new-p-ek').value = ""; document.getElementById('new-p-vk').value = ""; document.getElementById('new-p-stock').value = "";
+    }
+
+    function fmtTime(ts) { if(!ts) return "hh:mm"; const d = new Date(ts); return d.getHours().toString().padStart(2, '0') + ":" + d.getMinutes().toString().padStart(2, '0'); }
 
     function openEmpModal(id) {
         const e = employees.find(x => x.id === id);
         let shiftsHtml = "";
         let totalHrs = 0;
         let rankOptions = ranks.map(r => `<option value="${r.id}" ${e.role === r.id ? 'selected' : ''}>${r.name}</option>`).join('');
-
         if(e.shifts) {
             Object.values(e.shifts).reverse().slice(0,10).forEach(s => {
                 let saldo = 0;
-                if(s.end) {
-                    saldo = (s.end - s.start) / 1000 / 60 / 60;
-                    totalHrs += saldo;
-                }
+                if(s.end) { saldo = (s.end - s.start) / 1000 / 60 / 60; totalHrs += saldo; }
                 shiftsHtml += `<tr><td><div class="shift-box">${fmtTime(s.start)}</div></td><td><div class="shift-box">${s.end ? fmtTime(s.end) : '--:--'}</div></td><td style="text-align:right; font-weight:bold;">${saldo > 0 ? saldo.toFixed(2) : '0.00'}</td></tr>`;
             });
         }
-
         document.getElementById('modal-body').innerHTML = `
             <h2 style="margin-bottom:20px; font-family:var(--font-fancy); color:#a0c4ff;">Profil: ${e.u}</h2>
             <label>Name</label><input type="text" id="edit-u" value="${e.u}">
@@ -325,39 +507,21 @@
         document.getElementById('modal-overlay').style.display = 'flex';
     }
 
-    function saveEmp(id) { 
-        rtdb.ref(`employees/${id}`).update({ 
-            u: document.getElementById('edit-u').value, 
-            p: document.getElementById('edit-p').value,
-            role: document.getElementById('edit-r').value
-        }); 
-        closeModal(); 
-    }
-
+    function saveEmp(id) { rtdb.ref(`employees/${id}`).update({ u: document.getElementById('edit-u').value, p: document.getElementById('edit-p').value, role: document.getElementById('edit-r').value }); closeModal(); }
     function deleteEmp(id) { if(confirm("Löschen?")) { rtdb.ref(`employees/${id}`).remove(); closeModal(); } }
     function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
-
     function refreshRankDisplays() {
         const sel = document.getElementById('new-r');
         const cont = document.getElementById('ranks-list-container');
         if(sel) sel.innerHTML = ranks.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
         if(cont) { cont.innerHTML = ranks.map(r => `
-            <div class="rank-item">
-                <input type="text" value="${r.name}" class="glass" id="edit-rank-name-${r.id}" style="flex:2">
+            <div style="display:flex; align-items:center; gap:15px; padding:10px; background:rgba(255,255,255,0.03); border-radius:10px; margin-bottom:5px;">
+                <input type="text" value="${r.name}" class="glass" id="edit-rank-name-${r.id}" style="flex:2; margin:0;">
                 <label style="display:flex; align-items:center; gap:5px; font-size:12px;"><input type="checkbox" id="edit-rank-mgmt-${r.id}" ${r.mgmt ? 'checked' : ''}> Mgmt.</label>
                 <button class="btn-danger" style="padding:5px 10px" onclick="deleteRank('${r.id}')">X</button>
             </div>`).join(''); }
     }
-
-    function saveAllRanks() {
-        ranks.forEach(r => {
-            const nameValue = document.getElementById(`edit-rank-name-${r.id}`).value;
-            const mgmtValue = document.getElementById(`edit-rank-mgmt-${r.id}`).checked;
-            rtdb.ref('ranks/'+r.id).update({ name: nameValue, mgmt: mgmtValue });
-        });
-        customNotify("Alle Ränge gespeichert");
-    }
-
+    function saveAllRanks() { ranks.forEach(r => { const nameValue = document.getElementById(`edit-rank-name-${r.id}`).value; const mgmtValue = document.getElementById(`edit-rank-mgmt-${r.id}`).checked; rtdb.ref('ranks/'+r.id).update({ name: nameValue, mgmt: mgmtValue }); }); customNotify("Alle Ränge gespeichert"); }
     function addRank() { rtdb.ref('ranks').push({ name: document.getElementById('new-rank-name').value, mgmt: document.getElementById('new-rank-mgmt').checked }); }
     function deleteRank(id) { rtdb.ref('ranks/'+id).remove(); }
     function deleteP(id) { if(confirm("Löschen?")) rtdb.ref('products/'+id).remove(); }
@@ -370,10 +534,7 @@
         const user = employees.find(x => x.u === u && x.p === p);
         if(user) { currentUser = user; const r = ranks.find(x => x.id === user.role); document.getElementById('mgmt-btn').style.display = (r && r.mgmt) ? "block" : "none"; showScreen('main-system'); }
     }
-    function logoutAndClear() {
-        if(onDuty && currentUser && currentShiftKey) rtdb.ref(`employees/${currentUser.id}/shifts/${currentShiftKey}`).update({ end: Date.now() });
-        location.reload();
-    }
+    function logoutAndClear() { if(onDuty && currentUser && currentShiftKey) rtdb.ref(`employees/${currentUser.id}/shifts/${currentShiftKey}`).update({ end: Date.now() }); location.reload(); }
     function toggleDuty() {
         onDuty = !onDuty; const b = document.getElementById('duty-btn');
         if(onDuty) { currentShiftKey = rtdb.ref(`employees/${currentUser.id}/shifts`).push({ start: Date.now() }).key; b.innerText = "Ausstempeln"; b.className = "btn-danger"; customNotify("Eingestempelt!"); } 
@@ -395,28 +556,13 @@
         });
     }
     function updateQty(id, d) { let n = (cart[id]?.qty || 0) + d; if(n > 0) cart[id] = { name: products.find(x => x.id === id).name, qty: n, price: products.find(x => x.id === id).price }; else delete cart[id]; renderCart(); renderProducts(); }
-    
     function applyDiscount(p) { currentDiscount = p; renderCart(); }
-    
     function renderCart() {
         let l = document.getElementById('cart-list'), baseSum = 0; l.innerHTML = "";
         for(let id in cart) { baseSum += cart[id].qty * cart[id].price; l.innerHTML += `<div>${cart[id].qty}x ${cart[id].name}</div>`; }
         if(currentTip > 0) l.innerHTML += `<div style="color:var(--success)">+ Trinkgeld: ${currentTip.toFixed(2)}€</div>`;
         let finalSum = (baseSum * (1 - (currentDiscount / 100))) + currentTip;
         document.getElementById('total-price').innerText = finalSum.toFixed(2);
-    }
-    
-    async function submitReceipt() {
-        if(!onDuty) return customNotify("Nicht eingestempelt!");
-        const totalBrutto = parseFloat(document.getElementById('total-price').innerText);
-        let totalNetto = currentTip;
-        for(let id in cart) {
-            let p = products.find(x => x.id === id);
-            totalNetto += cart[id].qty * (p.price * (1 - (currentDiscount / 100)) - (p.ek || 0));
-            rtdb.ref('products/'+id).update({ stock: (p.stock || 0) - cart[id].qty });
-        }
-        rtdb.ref('totals').transaction(t => { if(t) { t.day += totalBrutto; t.week += totalBrutto; t.month += totalBrutto; t.dayNet += totalNetto; t.weekNet += totalNetto; t.monthNet += totalNetto; } return t; });
-        cart = {}; currentDiscount = 0; currentTip = 0; renderCart(); renderProducts(); customNotify("Erfolg!");
     }
 
     setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleTimeString(); }, 1000);
